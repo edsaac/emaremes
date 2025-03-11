@@ -34,12 +34,12 @@ def get_file(t: pd.Timestamp):
 
 def main():
     # Insert date range to query
-    initial_date = datetime(2019, 4, 30, 6, 0, 0)
-    end_date = datetime(2019, 5, 1, 12, 0, 0)
+    initial_date = datetime(2021, 6, 26, 0, 0, 0)
+    end_date = datetime(2021, 6, 27, 0, 0, 0)
 
     # Select a frequency.
     # data is posted every 2 minutes
-    frequency = timedelta(minutes=10)
+    frequency = timedelta(minutes=2)
 
     range_dates = pd.date_range(initial_date, end_date, freq=frequency)
 

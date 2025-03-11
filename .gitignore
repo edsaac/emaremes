@@ -172,4 +172,8 @@ cython_debug/
 
 # Current repo
 data
-imgs
+imgs*
+markham_imgs
+markham_imgs/*
+timeseries
+usgs
