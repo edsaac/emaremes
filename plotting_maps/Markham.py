@@ -1,53 +1,24 @@
 from pathlib import Path
-from dataclasses import dataclass
 from multiprocessing import Pool
-from typing import Literal
 from sys import argv
 
 import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import cartopy.feature as cf
 import cartopy.io.img_tiles as cimgt
 import geopandas as gpd
+import cmocean
+
+from utils import Extent
+
 
 FOLDER_DESTINATION = Path("imgs_markham")
 FOLDER_DESTINATION.mkdir(exist_ok=True)
 
 
 img = cimgt.OSM(cache=True)
-
-@dataclass
-class Extent:
-    lats: tuple[float, float]
-    lons: tuple[float, float]
-
-    def __post_init__(self):
-        if self.lats[0] > self.lats[1]:
-            self.up_lat, self.down_lat = self.lats
-        else:
-            self.down_lat, self.up_lat = self.lats
-
-        if self.lons[0] < self.lons[1]:
-            self.left_lon, self.right_lon = self.lons
-        else:
-            self.right_lon, self.left_lon = self.lons
-
-    def as_xr_slice(self):
-        if self.left_lon < 0:
-            pos_left_lon = 360 + self.left_lon
-
-        if self.right_lon < 0:
-            pos_right_lon = 360 + self.right_lon
-
-        return dict(
-            latitude=slice(self.up_lat, self.down_lat),
-            longitude=slice(pos_left_lon, pos_right_lon),
-        )
-
-    def as_mpl(self):
-        return (self.left_lon, self.right_lon, self.down_lat, self.up_lat)
+lightcmap = cmocean.tools.lighten(cmocean.cm.rain, 0.9)
 
 
 # Read shapefiles
@@ -55,7 +26,8 @@ markham = gpd.read_file("~/Desktop/GIS_drafts/Municipalities/municipalities.geoj
 streets = gpd.read_file("~/Desktop/GIS_drafts/Streets/major_roads.geojson")
 extent = Extent((41.58, 41.63), (-87.72, -87.64))
 
-def make_figure(file: Path, what_to_do: Literal["return_fig", "save_fig", "show_fig"] = "save_fig"):
+
+def make_figure(file: Path):
     # Bounded to IL and masking NaN pixels
     ds = xr.open_dataset(file, engine="cfgrib", decode_timedelta=False)
     timestr = np.datetime_as_string(ds.time.values.copy(), unit="s")
@@ -65,7 +37,6 @@ def make_figure(file: Path, what_to_do: Literal["return_fig", "save_fig", "show_
     masked = masked.where(xclip["unknown"] != 0)
 
     # Define cartopy projections
-    # proj = ccrs.AzimuthalEquidistant(central_longitude=-87.688, central_latitude=41.607)
     proj = ccrs.PlateCarree()
     plate = ccrs.PlateCarree()
 
@@ -81,13 +52,12 @@ def make_figure(file: Path, what_to_do: Literal["return_fig", "save_fig", "show_
     # ax.add_feature(cf.STATES, zorder=1)
 
     masked["unknown"].plot(
-        cmap="gist_ncar_r",
+        cmap=lightcmap,
         vmin=0,
         vmax=40,
         ax=ax,
         zorder=4,
         transform=plate,
-        alpha=0.8,
         cbar_kwargs=dict(label="PrecipRate [mm/hr]", shrink=0.35),
     )
 
@@ -99,24 +69,13 @@ def make_figure(file: Path, what_to_do: Literal["return_fig", "save_fig", "show_
     for spine in ax.spines:
         ax.spines[spine].set_visible(False)
 
-    if what_to_do == "show_fig":
-        plt.show()
-        plt.close(fig)
-        return
+    plt.savefig(FOLDER_DESTINATION / f"{file.name}.png", bbox_inches="tight", dpi=120)
+    print(f"Saved {file.name}.png")
+    plt.close(fig)
+    ds.close()
 
-    elif what_to_do == "return_fig":
-        return fig
-
-    elif what_to_do == "save_fig":
-        plt.savefig(f"markham_imgs/{file.name}.png", bbox_inches="tight", dpi=120)
-        print(f"Saved {file.name}.png")
-        
-        plt.close(fig)
-        ds.close()
-    return
 
 if __name__ == "__main__":
-
     path = Path(argv[1])
 
     if path.is_dir():
@@ -125,7 +84,6 @@ if __name__ == "__main__":
 
         with Pool() as pool:
             pool.map(make_figure, files)
-    
+
     else:
         make_figure(path)
-
