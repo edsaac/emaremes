@@ -172,6 +172,7 @@ cython_debug/
 
 # Current repo
 data
+data_old
 imgs*
 markham_imgs
 markham_imgs/*
