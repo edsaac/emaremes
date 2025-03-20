@@ -20,7 +20,6 @@ from shapely.geometry import Point
 
 from emaremes.utils import Extent
 
-
 # Read polygons
 subcatchments = gpd.read_file(
     "../../data_old/Subcatchments__WestLittleCal/Subcatchments__WestLittleCal.shp"
