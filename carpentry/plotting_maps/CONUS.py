@@ -9,7 +9,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cf
 import cmocean
 
-from utils import Extent
+from emaremes.utils import Extent
 
 
 FOLDER_DESTINATION = Path("imgs_conus")

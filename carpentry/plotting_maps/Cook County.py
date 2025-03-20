@@ -11,7 +11,7 @@ import cartopy.io.img_tiles as cimgt
 import geopandas as gpd
 import cmocean
 
-from utils import Extent
+from emaremes.utils import Extent
 
 FOLDER_DESTINATION = Path("imgs_cook_county")
 FOLDER_DESTINATION.mkdir(exist_ok=True)
