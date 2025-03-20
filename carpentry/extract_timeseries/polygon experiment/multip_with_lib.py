@@ -34,5 +34,7 @@ grib_files = data_folder.glob("*.grib2")
 grib_files = sorted(grib_files)
 
 # Generate a mask from the first grib file
-df = extract_polygon_series(grib_files, blob)
-df.to_parquet("multip.parquet")
+
+
+df = extract_polygon_series(grib_files, blob, upsample=True)
+df.to_parquet("multip_intepr.parquet")

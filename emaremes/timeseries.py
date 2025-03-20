@@ -1,4 +1,5 @@
 import gzip
+from typing import Mapping
 
 from pathlib import Path
 from multiprocessing import Pool
@@ -65,16 +66,24 @@ def extract_point_series(files: list[Path], lat: float, lon: float) -> pd.DataFr
     return df
 
 
-def _extract_mean_polygon(file: Path, mask: np.ndarray, extent: Extent):
-    with xr.open_dataset(
-        file,
-        engine="cfgrib",
-        decode_timedelta=True,
-    ) as ds:
+def extract_polygon_value(
+    file: Path,
+    mask: np.ndarray,
+    extent: Extent,
+    upsample_coords: Mapping[str, np.ndarray] | None = None,
+):
+    with xr.open_dataset(file, engine="cfgrib", decode_timedelta=True) as ds:
         # Open file and do a coarse clip
         time = ds.time.values.copy()
         xclip = ds.loc[extent.as_xr_slice()]
-        mask_ds = xclip.where(mask)
+
+        # Upscaling helper
+        if upsample_coords:
+            upsample = xclip.interp(coords=upsample_coords, method="nearest")
+        else:
+            upsample = xclip
+
+        mask_ds = upsample.where(mask)
 
         # Actually access the files and extract the data
         mean_precip = mask_ds["unknown"].mean(dim=["longitude", "latitude"])
@@ -83,7 +92,11 @@ def _extract_mean_polygon(file: Path, mask: np.ndarray, extent: Extent):
         return time, metric
 
 
-def extract_polygon_series(files: list[Path], polygon: gpd.GeoSeries) -> pd.DataFrame:
+def extract_polygon_series(
+    files: list[Path],
+    polygon: gpd.GeoSeries,
+    upsample: bool = False,
+) -> pd.DataFrame:
     if len(polygon) != 1:
         raise ValueError("Only one polygon is supported")
 
@@ -99,17 +112,34 @@ def extract_polygon_series(files: list[Path], polygon: gpd.GeoSeries) -> pd.Data
         xclip = ds.loc[extent.as_xr_slice()]
 
         # Generate points to evaluate
-        lon, lat = xclip.longitude, xclip.latitude
-        llon, llat = np.meshgrid(lon, lat)
-        points = np.vstack((llon.flatten(), llat.flatten())).T
+        lon, lat = xclip.longitude.values, xclip.latitude.values
+
+        if upsample:
+            llon = np.linspace(min(lon), max(lon), num=4 * len(lon) - 1)
+            llat = np.linspace(min(lat), max(lat), num=4 * len(lat) - 1)
+
+        else:
+            llon, llat = lon, lat
+
+        mlon, mlat = np.meshgrid(llon, llat)
+        points = np.vstack((mlon.flatten(), mlat.flatten())).T
 
         # Mask using the polygon.contains calculation
         mask = [translated_polygon.contains(Point(x, y)) for x, y in points]
-        mask = np.array(mask).reshape(len(lat), len(lon))
+        mask = np.array(mask).reshape(len(llat), len(llon))
 
     # Query all GRIB files
+
     with Pool() as pool:
-        query = pool.starmap(_extract_mean_polygon, [(f, mask, extent) for f in files])
+        if upsample:
+            upsample_coords = {"longitude": llon, "latitude": llat}
+
+            query = pool.starmap(
+                extract_polygon_value, [(f, mask, extent, upsample_coords) for f in files]
+            )
+
+        else:
+            query = pool.starmap(extract_polygon_value, [(f, mask, extent) for f in files])
 
     df = pd.DataFrame(
         {
