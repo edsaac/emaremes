@@ -178,3 +178,4 @@ markham_imgs
 markham_imgs/*
 timeseries
 usgs
+*.parquet
