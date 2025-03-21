@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from emaremes.download_data import GribFile, download_file, download_timerange
+from emaremes.download import GribFile, download_file, download_timerange
 
 
 def test_download_file():

@@ -19,6 +19,10 @@ if not MRMS_DATA.exists():
 
 @dataclass
 class GribFile:
+    """
+    Helper class to generate a grib file URL and path.
+    """
+
     t: DatetimeLike
 
     def __post_init__(self):
@@ -52,12 +56,17 @@ class GribFile:
 
 
 def download_file(gfile: GribFile):
-    """Requests a GribFile from the base URL
+    """
+    Requests a GribFile from the base URL to the MRMS archive.
 
     Parameters
     ----------
     gfile : GribFile
         File to be downloaded
+
+    Returns
+    -------
+    None
     """
     r = requests.get(gfile.url, stream=True)
 
@@ -79,7 +88,7 @@ def download_timerange(
     frequency: timedelta = timedelta(minutes=10),
 ):
     """
-    Download MRMS files available in the time range
+    Download MRMS files available in the time range.
 
     Parameters
     ----------
@@ -91,6 +100,11 @@ def download_timerange(
 
     frequency : timedelta
         Frequency of files to download. Data is available every 2 minutes.
+
+    Returns
+    -------
+    list[GribFile]
+        List of downloaded files.
     """
     if frequency < timedelta(minutes=2):
         raise ValueError("`frequency` should not be less than 2 minutes")
@@ -110,7 +124,7 @@ def download_timerange(
     gfiles_missing = list(compress(gfiles, mask))
 
     if gfiles_missing:
-        print(f">> {len(gfiles_missing)} files will be requested...")
+        print(f"-> {len(gfiles_missing)} files will be requested...")
 
         with Pool() as pool:
             pool.map(download_file, gfiles_missing)

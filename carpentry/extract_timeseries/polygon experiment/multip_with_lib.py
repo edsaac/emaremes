@@ -17,7 +17,6 @@ from emaremes.timeseries import extract_polygon_series
 subcatchments = gpd.read_file(
     "../../data_old/Subcatchments__WestLittleCal/Subcatchments__WestLittleCal.shp"
 )
-subcatchments.explore(column="Id", categorical=True)
 
 # Make a single polygon
 subcatchments["geometry"] = subcatchments["geometry"].buffer(0.001)
@@ -32,9 +31,6 @@ for idx in idx_files:
 
 grib_files = data_folder.glob("*.grib2")
 grib_files = sorted(grib_files)
-
-# Generate a mask from the first grib file
-
 
 df = extract_polygon_series(grib_files, blob, upsample=True)
 df.to_parquet("multip_intepr.parquet")

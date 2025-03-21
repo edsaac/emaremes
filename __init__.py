@@ -1,5 +1,5 @@
 from emaremes import utils
-from emaremes import download_data
+from emaremes import download
 from emaremes import timeseries
 
-__all__ = ["download_data", "utils", "timeseries"]
+__all__ = ["download", "utils", "timeseries"]
