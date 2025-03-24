@@ -1,0 +1,101 @@
+"""
+Benchmark:
+717 GRIB files (1 day @ 2min)
+
+naive -> 5m28.752s
+multip -> 0m55.990s
+
+"""
+
+from pathlib import Path
+from multiprocessing import Pool
+from sys import argv
+
+import numpy as np
+import xarray as xr
+import geopandas as gpd
+import pandas as pd
+
+from shapely.affinity import translate
+from shapely.geometry import Point
+
+from emaremes.utils import Extent
+
+MONTH = argv[1]
+DISSOLVED = False
+
+# Read polygons
+subcatchments = gpd.read_file(
+    "../data/Subcatchments__WestLittleCal/Subcatchments__WestLittleCal.shp"
+)
+
+# Select GRIB2 files
+data_folder = Path("../data")
+idx_files = data_folder.glob(f"2024{MONTH}*/*.idx")
+
+for idx in idx_files:
+    idx.unlink()
+
+grib_files = data_folder.glob(f"2024{MONTH}*/*.grib2")
+grib_files = sorted(grib_files)
+
+
+for i, subcatch in subcatchments.iterrows():
+    # Extract Polygon from GeoSeries and translate to GRIB coordinates
+    blob = subcatch.to_crs("4326")
+    translated_polygon = translate(blob.geometry[0], xoff=360)
+
+    # Set a extent to make a clip of the GRIB data before masking
+    bounds = blob.bounds
+    extent = Extent((bounds.miny[0], bounds.maxy[0]), (bounds.minx[0], bounds.maxx[0]))
+
+    # Generate a mask from the first grib file
+    with xr.open_dataset(grib_files[0], engine="cfgrib", decode_timedelta=True) as ds:
+        xclip = ds.loc[extent.as_xr_slice()]
+
+        # Generate points to evaluate
+        lon, lat = xclip.longitude.values, xclip.latitude.values
+        llon = np.linspace(min(lon), max(lon), num=4 * len(lon) - 1)
+        llat = np.linspace(min(lat), max(lat), num=4 * len(lat) - 1)
+
+        mlon, mlat = np.meshgrid(llon, llat)
+        points = np.vstack((mlon.flatten(), mlat.flatten())).T
+
+        # Mask using the polygon.contains calculation
+        mask = [translated_polygon.contains(Point(x, y)) for x, y in points]
+        mask = np.array(mask).reshape(len(llat), len(llon))
+
+    def extract_mean(file: Path):
+        with xr.open_dataset(
+            file,
+            engine="cfgrib",
+            decode_timedelta=True,
+        ) as ds:
+            # Open file and do a coarse clip
+            time = ds.time.values.copy()
+            xclip = ds.loc[extent.as_xr_slice()]
+            upsample = xclip.interp(coords={"longitude": llon, "latitude": llat}, method="nearest")
+            mask_ds = upsample.where(mask)
+
+            # Actually access the files and extract the data
+            mean_precip = mask_ds["unknown"].mean(dim=["longitude", "latitude"])
+            metric = mean_precip.values.copy()
+
+            return time, metric
+
+    with Pool() as pool:
+        query = pool.map(extract_mean, grib_files)
+
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.DatetimeIndex([q[0] for q in query]),
+            "value": [q[1] for q in query],
+        },
+    )
+
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["value"] = df["value"].astype(float)
+    df.set_index("timestamp", inplace=True)
+    df.to_parquet(f"{MONTH}-{i}.parquet")
+
+    print(f"Saved {MONTH}-{i}.parquet")
