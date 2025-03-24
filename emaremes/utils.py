@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -60,3 +61,22 @@ class Extent:
             Extent in the form (left, right, bottom, top).
         """
         return (self.left_lon, self.right_lon, self.down_lat, self.up_lat)
+
+
+def remove_idx_files(f: Path):
+    """
+    Removes the index files of a grib2 file.
+
+    Parameters
+    ----------
+    f : Path
+        Path to a grib2 file or a folder containing grib2 files.
+    """
+
+    if not f.is_dir():
+        f = f.parent
+
+    idx_files = f.glob("*.idx")
+
+    for idx_file in idx_files:
+        idx_file.unlink()

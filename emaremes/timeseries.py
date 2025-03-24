@@ -35,11 +35,12 @@ def _extract_point_from_grib2_file(f: Path, lat: float, lon: float) -> tuple[pd.
     tuple[pd.Timestamp, float]
         A tuple with the timestamp and value of the point.
     """
+
     with xr.open_dataset(f, engine="cfgrib", decode_timedelta=False) as ds:
         time = ds.time.values.copy()
         val = ds.sel(latitude=lat, longitude=lon, method="nearest")["unknown"].values.copy()
 
-    return pd.Timestamp(time), val
+    return pd.Timestamp(time), float(val)
 
 
 def _extract_point_from_zipped_file(f: Path, lat: float, lon: float) -> tuple[pd.Timestamp, float]:
@@ -84,16 +85,16 @@ def extract_point_value(f: Path, lat: float, lon: float) -> tuple[pd.Timestamp, 
     tuple[pd.Timestamp, float]
         A tuple with the timestamp and value of the point.
     """
+
+    f = Path(f)
+
     if f.suffix == ".grib2":
-        time, val = _extract_point_from_grib2_file(f, lat, lon)
+        return _extract_point_from_grib2_file(f, lat, lon)
 
     elif f.suffix == ".gz":
-        time, val = _extract_point_from_zipped_file(f, lat, lon)
+        return _extract_point_from_zipped_file(f, lat, lon)
 
-    else:
-        raise ValueError("File is not `.gz` nor `.grib2`")
-
-    return time, val
+    raise ValueError("File is not `.gz` nor `.grib2`")
 
 
 def extract_point_series(files: list[Path], lat: float, lon: float) -> pd.DataFrame:
@@ -131,8 +132,51 @@ def extract_point_series(files: list[Path], lat: float, lon: float) -> pd.DataFr
     return df
 
 
-def extract_masked_value(
+def _extract_masked_value_from_grib2_file(
     file: Path,
+    mask: np.ndarray,
+    extent: Extent,
+    variable: str = "unknown",
+    upsample_coords: Mapping[str, np.ndarray] | None = None,
+):
+    with xr.open_dataset(file, engine="cfgrib", decode_timedelta=True) as ds:
+        # Open file and do a coarse clip
+        time = ds.time.values.copy()
+        xclip = ds.loc[extent.as_xr_slice()]
+
+        # Upscaling helper
+        if upsample_coords:
+            upsample = xclip.interp(coords=upsample_coords, method="nearest")
+        else:
+            upsample = xclip
+
+        mask_ds = upsample.where(mask)
+
+        # Actually access the files and extract the data
+        mean_precip = mask_ds[variable].mean(dim=["longitude", "latitude"])
+        metric = mean_precip.values.copy()
+
+    return time, metric
+
+
+def _extract_masked_value_from_gz_file(
+    file: Path,
+    mask: np.ndarray,
+    extent: Extent,
+    variable: str = "unknown",
+    upsample_coords: Mapping[str, np.ndarray] | None = None,
+):
+    with gzip.open(file, "rb") as gzip_file_in:
+        with NamedTemporaryFile("ab+", suffix=".grib2") as tf:
+            unzipped_bytes = gzip_file_in.read()
+            tf.write(unzipped_bytes)
+            time, metric = _extract_masked_value_from_grib2_file(
+                tf.name, mask, extent, variable, upsample_coords
+            )
+
+
+def extract_masked_value(
+    file: Path | str,
     mask: np.ndarray,
     extent: Extent,
     variable: str = "unknown",
@@ -160,25 +204,15 @@ def extract_masked_value(
     tuple[pd.Timestamp, float]
         A tuple with the timestamp and value of the polygon.
     """
+    file = Path(file)
 
-    with xr.open_dataset(file, engine="cfgrib", decode_timedelta=True) as ds:
-        # Open file and do a coarse clip
-        time = ds.time.values.copy()
-        xclip = ds.loc[extent.as_xr_slice()]
+    if file.suffix == ".grib2":
+        return _extract_masked_value_from_grib2_file(file, mask, extent, variable, upsample_coords)
 
-        # Upscaling helper
-        if upsample_coords:
-            upsample = xclip.interp(coords=upsample_coords, method="nearest")
-        else:
-            upsample = xclip
+    elif file.suffix == ".gz":
+        return _extract_masked_value_from_gz_file(file, mask, extent, variable, upsample_coords)
 
-        mask_ds = upsample.where(mask)
-
-        # Actually access the files and extract the data
-        mean_precip = mask_ds[variable].mean(dim=["longitude", "latitude"])
-        metric = mean_precip.values.copy()
-
-    return time, metric
+    raise ValueError("File is not `.gz` nor `.grib2`")
 
 
 def extract_polygon_series(

@@ -10,11 +10,11 @@ import pandas as pd
 type DatetimeLike = datetime | pd.Timestamp
 
 BASE_URL = "https://mtarchive.geol.iastate.edu"
-MRMS_DATA = Path.home() / "emaremes"
+MRMS_LOCALPATH = Path.home() / "emaremes"
 
-if not MRMS_DATA.exists():
-    MRMS_DATA.mkdir()
-    print(f"Downloaded MRMS data will be stored at {MRMS_DATA}")
+if not MRMS_LOCALPATH.exists():
+    MRMS_LOCALPATH.mkdir()
+    print(f"Downloaded MRMS data will be stored at {MRMS_LOCALPATH}")
 
 
 @dataclass
@@ -45,7 +45,7 @@ class GribFile:
 
     @property
     def folder(self) -> Path:
-        return MRMS_DATA / self.t.strftime(r"%Y%m%d")
+        return MRMS_LOCALPATH / self.t.strftime(r"%Y%m%d")
 
     @property
     def path(self) -> Path:
