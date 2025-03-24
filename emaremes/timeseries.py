@@ -230,7 +230,7 @@ def extract_polygon_series(
         List of grib2 files to extract the polygon value from.
     polygon : gpd.GeoSeries
         Polygon to extract the value from.
-    upsample : bool, optional
+    upsample : bool = False
         Whether to upsample the data to a finer grid, by default False.
     """
     if len(polygon) != 1:
@@ -286,6 +286,137 @@ def extract_polygon_series(
 
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
     df["value"] = df["value"].astype(float)
+    df.set_index("timestamp", inplace=True)
+
+    return df
+
+
+def _extract_using_masks(
+    file: Path,
+    masks: dict[str, np.ndarray],
+    extent: Extent,
+    variable: str = "unknown",
+    upsample_coords: Mapping[str, np.ndarray] | None = None,
+) -> tuple[np.datetime64, dict[str, float]]:
+    """
+    Extracts the values of a grib2 file provided a mask and an extent.
+
+    Parameters
+    ----------
+    file : Path
+        Path to the grib2 file.
+    masks : dict[str, np.ndarray]
+        Masks to apply to the grib2 file.
+    extent : Extent
+        Extent to clip the grib2 file to.
+    variable : str, optional
+        Variable to extract from the grib2 file, by default "unknown" which
+        represents precipitation intensity in mm/h.
+    upsample_coords : Mapping[str, np.ndarray] | None, optional
+        Coordinates to upsample the data to, by default None.
+
+    Returns
+    -------
+    tuple[pd.Timestamp, dict[str, float]]
+        A tuple with the timestamp and values for the polygons.
+    """
+    with xr.open_dataset(file, engine="cfgrib", decode_timedelta=True) as ds:
+        # Open file and do a coarse clip
+        time = ds.time.values.copy()
+        xclip = ds.loc[extent.as_xr_slice()]
+
+        # Upscaling helper
+        if upsample_coords:
+            upsample = xclip.interp(coords=upsample_coords, method="nearest")
+        else:
+            upsample = xclip
+
+        # Dictionary to store the data
+        data = {}
+
+        for id, mask in masks.items():
+            mask_ds = upsample.where(mask)
+
+            # Actually access the files and extract the data
+            mean_precip = mask_ds[variable].mean(dim=["longitude", "latitude"])
+            data[id] = float(mean_precip.values.copy())
+
+    return time, data
+
+
+def extract_multipolygon_series(
+    files: list[Path],
+    geodata: gpd.GeoDataFrame,
+    identifier: str | None = None,
+    upsample: bool = False,
+) -> pd.DataFrame:
+    """
+    Parallelizes the extraction of polygon values from grib2 files. For a large number of files,
+    this can be much faster than using `xr.open_mfdataset`.
+
+    Parameters
+    ----------
+    files : list[Path]
+        List of grib2 files to extract the polygon value from.
+    geodata : gpd.GeoDataFrame
+        Geopandas dataframe of polygons to extract the value from.
+    upsample : bool, optional
+        Whether to upsample the data to a finer grid, by default False.
+    """
+
+    geodata["QueryID"] = geodata["QueryID"] if identifier else [f"S_{s:02d}" for s in geodata.index]
+
+    # Figure out the extent of first clip
+    geodata["geometry"] = geodata["geometry"].buffer(0.001)
+    blob = geodata.dissolve().simplify(tolerance=50)
+    geo_blob = blob.to_crs("4326")
+    all_bounds = geo_blob.bounds
+    extent = Extent(
+        (all_bounds.miny[0], all_bounds.maxy[0]), (all_bounds.minx[0], all_bounds.maxx[0])
+    )
+
+    # Reproject the geodatabase and create a mapping of identifier: polygon
+    geodata_reproj = geodata.to_crs("4326")
+    translated_polygons = {
+        geo["QueryID"]: translate(geo.geometry, xoff=360) for _, geo in geodata_reproj.iterrows()
+    }
+
+    # Generate mask from first GRIB file
+    masks = {}
+
+    with xr.open_dataset(files[0], engine="cfgrib", decode_timedelta=True) as ds:
+        xclip = ds.loc[extent.as_xr_slice()]
+
+        # Generate points to evaluate
+        lon, lat = xclip.longitude.values.copy(), xclip.latitude.values.copy()
+
+        if upsample:
+            llon = np.linspace(min(lon), max(lon), num=4 * len(lon) - 1)
+            llat = np.linspace(min(lat), max(lat), num=4 * len(lat) - 1)
+
+        else:
+            llon, llat = lon, lat
+
+        upsample_coords = {"longitude": llon, "latitude": llat}
+        mlon, mlat = np.meshgrid(llon, llat)
+        points = np.vstack((mlon.flatten(), mlat.flatten())).T
+
+        # Mask using the polygon.contains calculation
+        masks = {
+            k: np.array([poly.contains(Point(x, y)) for x, y in points]).reshape(
+                len(llat), len(llon)
+            )
+            for k, poly in translated_polygons.items()
+        }
+
+    # Query all GRIB files
+    with Pool() as pool:
+        query = pool.starmap(
+            _extract_using_masks, [(f, masks, extent, "unknown", upsample_coords) for f in files]
+        )
+
+    df = pd.DataFrame([{"timestamp": timestamp, **values} for timestamp, values in query])
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
     df.set_index("timestamp", inplace=True)
 
     return df
