@@ -4,7 +4,7 @@ from pathlib import Path
 from sys import argv
 
 import geopandas as gpd
-from emaremes.timeseries import extract_multipolygon_series
+from emaremes.ts import extract_multipolygon_series
 
 MONTH = argv[1]
 

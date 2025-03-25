@@ -2,6 +2,8 @@
 - Add `mrms.timeseries` tools. For larger datasets, these run faster than using `xr.open_mfdataset`.
 - Add docstrings to functions.
 - Build timeseries using polygons.
+- Add map plotting function.
+- Organized timeseries building functions into the ts submodule.
 
 ## Previous notes:
 

@@ -7,14 +7,14 @@ from itertools import compress
 import requests
 import pandas as pd
 
-type DatetimeLike = datetime | pd.Timestamp
+DatetimeLike = datetime | pd.Timestamp
 
-BASE_URL = "https://mtarchive.geol.iastate.edu"
-MRMS_LOCALPATH = Path.home() / "emaremes"
+_BASE_URL = "https://mtarchive.geol.iastate.edu"
+LOCALPATH = Path.home() / "emaremes"
 
-if not MRMS_LOCALPATH.exists():
-    MRMS_LOCALPATH.mkdir()
-    print(f"Downloaded MRMS data will be stored at {MRMS_LOCALPATH}")
+if not LOCALPATH.exists():
+    LOCALPATH.mkdir()
+    print(f"Downloaded MRMS data will be stored at {LOCALPATH}")
 
 
 @dataclass
@@ -36,7 +36,7 @@ class GribFile:
 
     @property
     def url(self) -> str:
-        head = f"{BASE_URL}/{self.t.strftime(r'%Y/%m/%d')}/mrms/ncep/PrecipRate"
+        head = f"{_BASE_URL}/{self.t.strftime(r'%Y/%m/%d')}/mrms/ncep/PrecipRate"
         return f"{head}/PrecipRate_00.00_{self.t.strftime(r'%Y%m%d-%H%M%S')}.grib2.gz"
 
     @property
@@ -45,7 +45,7 @@ class GribFile:
 
     @property
     def folder(self) -> Path:
-        return MRMS_LOCALPATH / self.t.strftime(r"%Y%m%d")
+        return LOCALPATH / self.t.strftime(r"%Y%m%d")
 
     @property
     def path(self) -> Path:
@@ -55,7 +55,7 @@ class GribFile:
         return self.path.exists()
 
 
-def download_file(gfile: GribFile):
+def single_file(gfile: GribFile, verbose: bool = False):
     """
     Requests a GribFile from the base URL to the MRMS archive.
 
@@ -63,6 +63,8 @@ def download_file(gfile: GribFile):
     ----------
     gfile : GribFile
         File to be downloaded
+    verbose : bool, optional
+        Whether to print the progress of the download, by default False.
 
     Returns
     -------
@@ -77,15 +79,18 @@ def download_file(gfile: GribFile):
         # Write data to file
         with open(gfile.path, "wb") as f:
             f.write(r.content)
-            print(f"Saved {gfile.fname} :)")
+            if verbose:
+                print(f"Saved {gfile.fname} :)")
     else:
-        print(f"Error downloading {gfile.fname}")
+        if verbose:
+            print(f"Error downloading {gfile.fname}. Likely it does not exist.")
 
 
-def download_timerange(
+def timerange(
     initial_datetime: DatetimeLike,
     end_datetime: DatetimeLike,
     frequency: timedelta = timedelta(minutes=10),
+    verbose: bool = False,
 ):
     """
     Download MRMS files available in the time range.
@@ -94,17 +99,17 @@ def download_timerange(
     ----------
     initial_datetime : DatetimeLike
         Initial datetime.
-
     end_datetime : DatetimeLike
         File to be downloaded.
-
     frequency : timedelta
         Frequency of files to download. Data is available every 2 minutes.
+    verbose : bool, optional
+        Whether to print the progress of the download, by default False.
 
     Returns
     -------
-    list[GribFile]
-        List of downloaded files.
+    list[Path]
+        List of paths with the downloaded files.
     """
     if frequency < timedelta(minutes=2):
         raise ValueError("`frequency` should not be less than 2 minutes")
@@ -119,17 +124,23 @@ def download_timerange(
     for dest_folder in set([gf.folder for gf in gfiles]):
         dest_folder.mkdir(exist_ok=True)
 
+        dest_folder.glob("*.idx")
+        for idx in dest_folder.glob("*.idx"):
+            idx.unlink()
+
     # Select which files need to be downloaded
     mask = [not gf.exists() for gf in gfiles]
     gfiles_missing = list(compress(gfiles, mask))
 
     if gfiles_missing:
-        print(f"-> {len(gfiles_missing)} files will be requested...")
+        if verbose:
+            print(f"-> {len(gfiles_missing)} files will be requested...")
 
         with Pool() as pool:
-            pool.map(download_file, gfiles_missing)
+            pool.map(single_file, gfiles_missing)
 
     else:
-        print("Nothing new to download :D")
+        if verbose:
+            print("Nothing new to download :D")
 
-    return gfiles
+    return [gf.path for gf in gfiles]

@@ -10,7 +10,7 @@ multip.2 -> 0m56.370s
 from pathlib import Path
 import geopandas as gpd
 
-from emaremes.timeseries import extract_polygon_series
+from emaremes.ts import extract_polygon_series
 
 
 # Read polygons

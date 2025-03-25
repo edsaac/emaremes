@@ -1,9 +1,9 @@
-from emaremes.timeseries import extract_point_value, extract_point_series
-from emaremes.download import MRMS_LOCALPATH
+from emaremes.ts import extract_point_value, extract_point_series
+from emaremes.download import LOCALPATH
 
 
 def test_extract_point_value_from_gz():
-    grib_files = (MRMS_LOCALPATH / "20250101").glob("*.gz")
+    grib_files = (LOCALPATH / "20250101").glob("*.gz")
     grib_files = sorted(grib_files)
     file = grib_files[0]
 
