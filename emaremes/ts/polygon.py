@@ -3,7 +3,6 @@ import gzip
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from multiprocessing import Pool
-from typing import Mapping
 
 import numpy as np
 import pandas as pd
@@ -22,7 +21,7 @@ def _extract_using_masks_from_grib_file(
     masks: dict[str, np.ndarray],
     extent: Extent,
     variable: str = "unknown",
-    upsample_coords: Mapping[str, np.ndarray] | None = None,
+    upsample_coords: dict[str, np.ndarray] | None = None,
 ) -> tuple[np.datetime64, dict[str, float]]:
     """
     Extracts the values of a grib2 file provided a mask and an extent.
@@ -38,7 +37,7 @@ def _extract_using_masks_from_grib_file(
     variable : str, optional
         Variable to extract from the grib2 file, by default "unknown" which
         represents precipitation intensity in mm/h.
-    upsample_coords : Mapping[str, np.ndarray] | None, optional
+    upsample_coords : dict[str, np.ndarray] | None, optional
         Coordinates to upsample the data to, by default None.
 
     Returns
@@ -76,7 +75,7 @@ def _extract_using_masks_from_gz_file(
     masks: dict[str, np.ndarray],
     extent: Extent,
     variable: str = "unknown",
-    upsample_coords: Mapping[str, np.ndarray] | None = None,
+    upsample_coords: dict[str, np.ndarray] | None = None,
 ) -> tuple[np.datetime64, dict[str, float]]:
     """
     Extracts the values of a gz file provided a list of masks and an extent.
@@ -92,7 +91,7 @@ def _extract_using_masks_from_gz_file(
     variable : str, optional
         Variable to extract from the grib2 file, by default "unknown" which
         represents precipitation intensity in mm/h.
-    upsample_coords : Mapping[str, np.ndarray] | None, optional
+    upsample_coords : dict[str, np.ndarray] | None, optional
         Coordinates to upsample the data to, by default None.
 
     Returns
@@ -116,7 +115,7 @@ def _extract_using_masks_from_file(
     masks: dict[str, np.ndarray],
     extent: Extent,
     variable: str = "unknown",
-    upsample_coords: Mapping[str, np.ndarray] | None = None,
+    upsample_coords: dict[str, np.ndarray] | None = None,
 ) -> tuple[np.datetime64, dict[str, float]]:
     """
     Extracts the values of a grib2 or a gz file provided a list of masks and an extent.
@@ -132,7 +131,7 @@ def _extract_using_masks_from_file(
     variable : str, optional
         Variable to extract from the grib2 file, by default "unknown" which
         represents precipitation intensity in mm/h.
-    upsample_coords : Mapping[str, np.ndarray] | None, optional
+    upsample_coords : dict[str, np.ndarray] | None, optional
         Coordinates to upsample the data to, by default None.
 
     Returns

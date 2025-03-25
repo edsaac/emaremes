@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "emaremes"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
     { name = "Edwin Saavedra C.", email = "esaavedrac@u.northwestern.edu" },
 ]
@@ -24,4 +24,4 @@ Homepage = "https://github.com/edsaac/mrms-data"
 Issues = "https://github.com/edsaac/mrms-data/issues"
 
 [tool.hatch.build.targets.sdist]
-exclude = ["/test", "/carpentry"]
+exclude = ["/test", "/carpentry", "/examples"]
