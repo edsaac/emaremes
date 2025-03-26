@@ -1,23 +1,18 @@
-import gzip
-
 from multiprocessing import Pool
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 
 import numpy as np
 import xarray as xr
 import pandas as pd
 import geopandas as gpd
 
-from ..utils import Extent
+from ..utils import Extent, unzip_if_gz
 
 
-def _extract_points_from_grib2_file(
-    f: Path, geodata: gpd.GeoDataFrame
-) -> tuple[np.datetime64, dict[str, float]]:
+@unzip_if_gz
+def query_single_file(f: Path, geodata: gpd.GeoDataFrame) -> tuple[np.datetime64, dict[str, float]]:
     """
-    Extracts the nearest value of a grib2 file provided a GeoDataFrame containing
-    Points as geometries.
+    Extracts the nearest value of a grib2 file provided a latitude and longitude.
 
     Parameters
     ----------
@@ -28,9 +23,10 @@ def _extract_points_from_grib2_file(
 
     Returns
     -------
-    tuple[pd.Timestamp, dict[str, float]]
-        A tuple with the timestamp and value of the point.
+    tuple[np.datetime64, dict[str, float]]
+        A tuple with the timestamp and values of the queried points.
     """
+
     geodata = geodata.to_crs("4326")
     bounds = geodata.total_bounds
     extent = Extent((bounds[1], bounds[3]), (bounds[0], bounds[2]))
@@ -50,60 +46,6 @@ def _extract_points_from_grib2_file(
             data[str(index)] = float(v)
 
     return time, data
-
-
-def _extract_points_from_zipped_file(
-    f: Path, geodata: gpd.GeoDataFrame
-) -> tuple[np.datetime64, dict[str, float]]:
-    """
-    Extracts the nearest value of a gzipped grib2 file provided a latitude and longitude.
-    This just deflates the file and calls `_extract_points_from_grib2_file`.
-
-    Parameters
-    ----------
-    f : Path
-        Path to the gzipped grib2 file.
-
-    Returns
-    -------
-    tuple[pd.Timestamp, float]
-        A tuple with the timestamp and value of the point.
-    """
-    with gzip.open(f, "rb") as gzip_file_in:
-        with NamedTemporaryFile("ab+", suffix=".grib2") as tf:
-            unzipped_bytes = gzip_file_in.read()
-            tf.write(unzipped_bytes)
-            time, data = _extract_points_from_grib2_file(tf.name, geodata)
-
-    return time, data
-
-
-def query_single_file(f: Path, geodata: gpd.GeoDataFrame) -> tuple[np.datetime64, dict[str, float]]:
-    """
-    Extracts the nearest value of a grib2 file provided a latitude and longitude.
-
-    Parameters
-    ----------
-    f : Path
-        Path to the grib2 file.
-    geodata: gpd.GeoDataFrame
-        GeoDataFrame containing Points as geometries.
-
-    Returns
-    -------
-    tuple[np.datetime64, dict[str, float]]
-        A tuple with the timestamp and values of the queried points.
-    """
-
-    f = Path(f)
-
-    if f.suffix == ".grib2":
-        return _extract_points_from_grib2_file(f, geodata)
-
-    elif f.suffix == ".gz":
-        return _extract_points_from_zipped_file(f, geodata)
-
-    raise ValueError("File is not `.gz` nor `.grib2`")
 
 
 def query_files(files: list[Path], geodata: gpd.GeoDataFrame) -> pd.DataFrame:

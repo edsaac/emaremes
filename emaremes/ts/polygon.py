@@ -1,7 +1,4 @@
-import gzip
-
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from multiprocessing import Pool
 
 import numpy as np
@@ -13,10 +10,11 @@ from pyproj.crs.crs import CRS
 from shapely.geometry import Point, Polygon
 from shapely.affinity import translate
 
-from ..utils import Extent
+from ..utils import Extent, unzip_if_gz
 
 
-def _extract_using_masks_from_grib_file(
+@unzip_if_gz
+def _extract_using_masks_from_file(
     file: Path,
     masks: dict[str, np.ndarray],
     extent: Extent,
@@ -70,87 +68,8 @@ def _extract_using_masks_from_grib_file(
     return time, data
 
 
-def _extract_using_masks_from_gz_file(
-    file: Path,
-    masks: dict[str, np.ndarray],
-    extent: Extent,
-    variable: str = "unknown",
-    upsample_coords: dict[str, np.ndarray] | None = None,
-) -> tuple[np.datetime64, dict[str, float]]:
-    """
-    Extracts the values of a gz file provided a list of masks and an extent.
-
-    Parameters
-    ----------
-    file : Path
-        Path to the grib2 file.
-    masks : dict[str, np.ndarray]
-        Masks to apply to the grib2 file.
-    extent : Extent
-        Extent to clip the grib2 file to.
-    variable : str, optional
-        Variable to extract from the grib2 file, by default "unknown" which
-        represents precipitation intensity in mm/h.
-    upsample_coords : dict[str, np.ndarray] | None, optional
-        Coordinates to upsample the data to, by default None.
-
-    Returns
-    -------
-    tuple[np.datetime64, dict[str, float]]
-        A tuple with the timestamp and values for the polygons.
-    """
-    with gzip.open(file, "rb") as gzip_file_in:
-        with NamedTemporaryFile("ab+", suffix=".grib2") as tf:
-            unzipped_bytes = gzip_file_in.read()
-            tf.write(unzipped_bytes)
-            time, metric = _extract_using_masks_from_grib_file(
-                tf.name, masks, extent, variable, upsample_coords
-            )
-
-    return time, metric
-
-
-def _extract_using_masks_from_file(
-    file: Path,
-    masks: dict[str, np.ndarray],
-    extent: Extent,
-    variable: str = "unknown",
-    upsample_coords: dict[str, np.ndarray] | None = None,
-) -> tuple[np.datetime64, dict[str, float]]:
-    """
-    Extracts the values of a grib2 or a gz file provided a list of masks and an extent.
-
-    Parameters
-    ----------
-    file : Path
-        Path to the grib2 file.
-    masks : dict[str, np.ndarray]
-        Masks to apply to the grib2 file.
-    extent : Extent
-        Extent to clip the grib2 file to.
-    variable : str, optional
-        Variable to extract from the grib2 file, by default "unknown" which
-        represents precipitation intensity in mm/h.
-    upsample_coords : dict[str, np.ndarray] | None, optional
-        Coordinates to upsample the data to, by default None.
-
-    Returns
-    -------
-    tuple[np.datetime64, dict[str, float]]
-        A tuple with the timestamp and values for the polygons.
-    """
-    file = Path(file)
-
-    if file.suffix == ".grib2":
-        return _extract_using_masks_from_grib_file(file, masks, extent, variable, upsample_coords)
-
-    elif file.suffix == ".gz":
-        return _extract_using_masks_from_gz_file(file, masks, extent, variable, upsample_coords)
-
-    raise ValueError("File is not `.gz` nor `.grib2`")
-
-
-def _calculate_masks_from_grib2(
+@unzip_if_gz
+def _calculate_masks_and_coords(
     f: Path,
     polygons: dict[str, Polygon],
     extent: Extent,
@@ -179,31 +98,6 @@ def _calculate_masks_from_grib2(
         }
 
     return masks, upsample_coords
-
-
-def _calculate_masks_and_coords(
-    f: Path,
-    polygons: dict[str, Polygon],
-    extent: Extent,
-    upsample: bool = True,
-) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
-    """ """
-
-    if f.suffix == ".gz":
-        with gzip.open(f, "rb") as gzip_file_in:
-            with NamedTemporaryFile("ab+", suffix=".grib2") as tf:
-                unzipped_bytes = gzip_file_in.read()
-                tf.write(unzipped_bytes)
-                masks, upsample_coords = _calculate_masks_from_grib2(
-                    tf.name, polygons, extent, upsample
-                )
-
-        return masks, upsample_coords
-
-    elif f.suffix == ".grib2":
-        return _calculate_masks_from_grib2(f, polygons, extent, upsample)
-
-    raise ValueError("File is not `.gz` nor `.grib2`")
 
 
 def query_single_file(

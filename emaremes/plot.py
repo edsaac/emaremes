@@ -1,5 +1,5 @@
-from pathlib import Path
 from typing import Literal
+from pathlib import Path
 
 import numpy as np
 import xarray as xr
@@ -8,10 +8,11 @@ import cmocean
 import cartopy.crs as ccrs
 import cartopy.feature as cf
 
-from .utils import Extent, STATE_BOUNDS
+from .utils import Extent, STATE_BOUNDS, unzip_if_gz
 from .typing_utils import US_State
 
 
+@unzip_if_gz
 def plot_map(file: Path, state: US_State | Literal["CONUS"]):
     state = state.upper()
 

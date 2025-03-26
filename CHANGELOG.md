@@ -1,3 +1,8 @@
+# 0.0.4 | 
+- Consolidate unzip decorator to handle .grib2.gz and .grib2 files.
+- Add example notebooks.
+
+
 # ⭐ 0.0.3 | 2024-03-25
 - Organized timeseries building functions into the ts submodule.
 - Rename `mrms.timeseries` to `mrms.ts`.

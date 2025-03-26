@@ -1,5 +1,10 @@
+import gzip
+import functools
+
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
+from tempfile import NamedTemporaryFile
 
 
 @dataclass
@@ -166,3 +171,23 @@ def remove_idx_files(f: Path):
 
     for idx_file in idx_files:
         idx_file.unlink()
+
+
+def unzip_if_gz(func: Callable) -> Callable:
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        f = Path(args[0])
+
+        if f.suffix == ".grib2":
+            return func(*args, **kwargs)
+
+        elif f.suffix == ".gz":
+            with gzip.open(f, "rb") as gzip_file_in:
+                with NamedTemporaryFile("ab+", suffix=".grib2") as tf:
+                    unzipped_bytes = gzip_file_in.read()
+                    tf.write(unzipped_bytes)
+                    return func(tf.name, *args[1:], **kwargs)
+
+        raise ValueError("File is not `.gz` nor `.grib2`")
+
+    return wrapper
