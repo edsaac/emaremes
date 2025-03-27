@@ -3,11 +3,21 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from multiprocessing import Pool
 from itertools import compress
+from typing import Literal
 
 import requests
 import pandas as pd
 
-DatetimeLike = datetime | pd.Timestamp
+from .utils import DATA_NAMES
+
+type DatetimeLike = datetime | pd.Timestamp
+type MRMSDataType = Literal[
+    "precip_rate",
+    "precip_flag",
+    "precip_accum_1h",
+    "precip_accum_24h",
+    "precip_accum_72h",
+]
 
 _BASE_URL = "https://mtarchive.geol.iastate.edu"
 LOCALPATH = Path.home() / "emaremes"
@@ -24,20 +34,27 @@ class GribFile:
     """
 
     t: DatetimeLike
+    data_type: MRMSDataType = "precip_rate"
 
     def __post_init__(self):
         if not isinstance(self.t, pd.Timestamp):
             self.t = pd.to_datetime(self.t)
 
-        self.t = self.t.replace(second=0, microsecond=0)
+        match self.data_type:
+            case "precip_rate" | "precip_flag":
+                self.t = self.t.replace(second=0, microsecond=0)
 
-        if self.t.minute % 2 != 0:
-            raise ValueError(f"{self.t} is invalid. GRIB files are posted every 2 minutes")
+                if self.t.minute % 2 != 0:
+                    raise ValueError(f"{self.t} is invalid. GRIB files are posted every 2 minutes")
+
+            case "precip_accum_1h" | "precip_accum_24h" | "precip_accum_72h":
+                self.t = self.t.replace(minute=0, second=0, microsecond=0)
 
     @property
     def url(self) -> str:
-        head = f"{_BASE_URL}/{self.t.strftime(r'%Y/%m/%d')}/mrms/ncep/PrecipRate"
-        return f"{head}/PrecipRate_00.00_{self.t.strftime(r'%Y%m%d-%H%M%S')}.grib2.gz"
+        tail = DATA_NAMES[self.data_type]
+        head = f"{_BASE_URL}/{self.t.strftime(r'%Y/%m/%d')}/mrms/ncep/{tail}"
+        return f"{head}/{tail}_00.00_{self.t.strftime(r'%Y%m%d-%H%M%S')}.grib2.gz"
 
     @property
     def fname(self) -> str:
@@ -90,6 +107,7 @@ def timerange(
     initial_datetime: DatetimeLike,
     end_datetime: DatetimeLike,
     frequency: timedelta = timedelta(minutes=10),
+    data_type: MRMSDataType = "precip_rate",
     verbose: bool = False,
 ):
     """
@@ -101,8 +119,12 @@ def timerange(
         Initial datetime.
     end_datetime : DatetimeLike
         File to be downloaded.
-    frequency : timedelta
-        Frequency of files to download. Data is available every 2 minutes.
+    frequency : timedelta = timedelta(minutes=10)
+        Frequency of files to download. Precipitation rate and flags are available every
+        2 minutes. 24h accumulated precipitation is available every hour.
+    data_type : DataType, optional
+        Type of data to download, by default "precip_rate". Other options are
+        "precip_flag" and "precip_accum_24h".
     verbose : bool, optional
         Whether to print the progress of the download, by default False.
 
@@ -119,7 +141,7 @@ def timerange(
     end_datetime = end_datetime.replace(second=0, microsecond=0)
 
     range_dates = pd.date_range(initial_datetime, end_datetime, freq=frequency)
-    gfiles = [GribFile(t) for t in range_dates]
+    gfiles = [GribFile(t, data_type) for t in range_dates]
 
     for dest_folder in set([gf.folder for gf in gfiles]):
         dest_folder.mkdir(exist_ok=True)

@@ -11,6 +11,8 @@ import cartopy.feature as cf
 from .utils import Extent, STATE_BOUNDS, unzip_if_gz
 from .typing_utils import US_State
 
+__all__ = ["plot_map"]
+
 
 @unzip_if_gz
 def plot_map(file: Path, state: US_State | Literal["CONUS"]):

@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Various tools for dealing with MRMS data"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

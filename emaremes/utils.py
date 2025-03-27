@@ -100,6 +100,15 @@ class Extent:
         return (self.left_lon, self.down_lat, self.right_lon, self.up_lat)
 
 
+DATA_NAMES: dict[str, str] = {
+    "precip_rate": "PrecipRate",
+    "precip_flag": "PrecipFlag",
+    "precip_accum_1h": "RadarOnly_QPE_01H",
+    "precip_accum_24h": "RadarOnly_QPE_24H",
+    "precip_accum_72h": "RadarOnly_QPE_72H",
+}
+
+
 STATE_BOUNDS: dict[str, Extent] = {
     "AL": Extent((30.13, 35.11), (-88.57, -84.79)),
     "AK": Extent((51.11, 71.64), (-179.25, -66.83)),
