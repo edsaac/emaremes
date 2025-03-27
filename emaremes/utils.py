@@ -108,6 +108,27 @@ DATA_NAMES: dict[str, str] = {
     "precip_accum_72h": "RadarOnly_QPE_72H",
 }
 
+PRECIP_FLAGS: dict[int, str] = {
+    0: "No precipitation",
+    1: "Warm stratiform rain",
+    3: "Snow",
+    6: "Convective rain",
+    7: "Rain mixed with hail",
+    10: "Cold stratiform rain",
+    91: "Tropical/stratiform rain mix",
+    96: "Tropical/convective rain mix",
+}
+
+PRECIP_FLAGS_COLORS: dict[int, str] = {
+    0: ("#FFFFFF", 0.0),  # No precipitation (transparent)
+    1: ("#FF4500", 1.0),  # Warm stratiform rain
+    3: ("#87CEFA", 1.0),  # Snow
+    6: ("#228B22", 1.0),  # Convective rain
+    7: ("#FF8C00", 1.0),  # Rain mixed with hail
+    10: ("#4682B4", 1.0),  # Cold stratiform rain
+    91: ("#B22222", 1.0),  # Tropical/stratiform rain mix
+    96: ("#4B0082", 1.0),  # Tropical/convective rain mix
+}
 
 STATE_BOUNDS: dict[str, Extent] = {
     "AL": Extent((30.13, 35.11), (-88.57, -84.79)),
@@ -191,11 +212,14 @@ def unzip_if_gz(func: Callable) -> Callable:
             return func(*args, **kwargs)
 
         elif f.suffix == ".gz":
+            prefix = f.stem.partition("_")[0]
+            assert prefix in DATA_NAMES.values()
+
             with gzip.open(f, "rb") as gzip_file_in:
-                with NamedTemporaryFile("ab+", suffix=".grib2") as tf:
+                with NamedTemporaryFile("ab+", prefix=f"{prefix}_", suffix=".grib2") as tf:
                     unzipped_bytes = gzip_file_in.read()
                     tf.write(unzipped_bytes)
-                    return func(tf.name, *args[1:], **kwargs)
+                    return func(Path(tf.name), *args[1:], **kwargs)
 
         raise ValueError("File is not `.gz` nor `.grib2`")
 
