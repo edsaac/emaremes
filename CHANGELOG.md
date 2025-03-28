@@ -2,7 +2,7 @@
 - Consolidate unzip decorator to handle both `.grib2.gz` and `.grib2` files.
 - Add example notebooks.
 - Add other data sources from MRMS: precipitation rate, precipitation flag, and 1h, 24h and 72h accumulated precipitation. 
-
+- Calculate mode when plotting coarsed precipitation flag data.
 
 # ⭐ 0.0.3 | 2024-03-25
 - Organized timeseries building functions into the ts submodule.
