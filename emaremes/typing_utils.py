@@ -1,6 +1,14 @@
 from typing import Literal
 
-US_State = Literal[
+type DataName = Literal[
+    "precip_rate",
+    "precip_flag",
+    "precip_accum_1h",
+    "precip_accum_24h",
+    "precip_accum_72h",
+]
+
+type UnitedState = Literal[
     "AL",
     "AK",
     "AZ",

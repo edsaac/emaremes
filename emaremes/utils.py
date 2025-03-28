@@ -119,10 +119,10 @@ PRECIP_FLAGS: dict[int, str] = {
     96: "Tropical/convective rain mix",
 }
 
-PRECIP_FLAGS_COLORS: dict[int, str] = {
+PRECIP_FLAGS_COLORS: dict[int, tuple[str, float]] = {
     0: ("#FFFFFF", 0.0),  # No precipitation (transparent)
     1: ("#FF4500", 1.0),  # Warm stratiform rain
-    3: ("#87CEFA", 1.0),  # Snow
+    3: ("#666666", 1.0),  # Snow
     6: ("#228B22", 1.0),  # Convective rain
     7: ("#FF8C00", 1.0),  # Rain mixed with hail
     10: ("#4682B4", 1.0),  # Cold stratiform rain
@@ -216,7 +216,9 @@ def unzip_if_gz(func: Callable) -> Callable:
             assert prefix in DATA_NAMES.values()
 
             with gzip.open(f, "rb") as gzip_file_in:
-                with NamedTemporaryFile("ab+", prefix=f"{prefix}_", suffix=".grib2") as tf:
+                with NamedTemporaryFile(
+                    "ab+", prefix=f"{prefix}_", suffix=".grib2"
+                ) as tf:
                     unzipped_bytes = gzip_file_in.read()
                     tf.write(unzipped_bytes)
                     return func(Path(tf.name), *args[1:], **kwargs)

@@ -25,6 +25,7 @@ dependencies = [
     "cfgrib",
     "shapely",
     "cartopy",
+    "cmocean",
 ]
 keywords = ["MRMS", "Precipitation", "CONUS", "data"]
 

@@ -45,7 +45,9 @@ class GribFile:
                 self.t = self.t.replace(second=0, microsecond=0)
 
                 if self.t.minute % 2 != 0:
-                    raise ValueError(f"{self.t} is invalid. GRIB files are posted every 2 minutes")
+                    raise ValueError(
+                        f"{self.t} is invalid. GRIB files are posted every 2 minutes"
+                    )
 
             case "precip_accum_1h" | "precip_accum_24h" | "precip_accum_72h":
                 self.t = self.t.replace(minute=0, second=0, microsecond=0)

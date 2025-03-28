@@ -93,7 +93,9 @@ def _calculate_masks_and_coords(
 
         # Mask using the polygon.contains calculation
         masks = {
-            k: np.array([p.contains(Point(x, y)) for x, y in points]).reshape(len(llat), len(llon))
+            k: np.array([p.contains(Point(x, y)) for x, y in points]).reshape(
+                len(llat), len(llon)
+            )
             for k, p in polygons.items()
         }
 
@@ -134,7 +136,8 @@ def query_single_file(
     geo_blob = blob.to_crs("4326")
     all_bounds = geo_blob.bounds
     extent = Extent(
-        (all_bounds.miny[0], all_bounds.maxy[0]), (all_bounds.minx[0], all_bounds.maxx[0])
+        (all_bounds.miny[0], all_bounds.maxy[0]),
+        (all_bounds.minx[0], all_bounds.maxx[0]),
     )
 
     # Reproject the geodatabase and create a mapping of identifier: polygon
@@ -148,7 +151,9 @@ def query_single_file(
         file, translated_polygons, extent, upsample
     )
 
-    return _extract_using_masks_from_file(file, masks, extent, "unknown", upsample_coords)
+    return _extract_using_masks_from_file(
+        file, masks, extent, "unknown", upsample_coords
+    )
 
 
 def query_files(
@@ -180,7 +185,8 @@ def query_files(
     geo_blob = blob.to_crs("4326")
     all_bounds = geo_blob.bounds
     extent = Extent(
-        (all_bounds.miny[0], all_bounds.maxy[0]), (all_bounds.minx[0], all_bounds.maxx[0])
+        (all_bounds.miny[0], all_bounds.maxy[0]),
+        (all_bounds.minx[0], all_bounds.maxx[0]),
     )
 
     # Reproject the geodatabase and create a mapping of identifier: polygon
@@ -201,7 +207,9 @@ def query_files(
             [(f, masks, extent, "unknown", upsample_coords) for f in files],
         )
 
-    df = pd.DataFrame([{"timestamp": timestamp, **values} for timestamp, values in query])
+    df = pd.DataFrame(
+        [{"timestamp": timestamp, **values} for timestamp, values in query]
+    )
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
     df.set_index("timestamp", inplace=True)
 
