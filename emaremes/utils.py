@@ -219,7 +219,7 @@ def unzip_if_gz(func: Callable) -> Callable:
             return func(*args, **kwargs)
 
         elif f.suffix == ".gz":
-            prefix = f.stem.partition("_")[0]
+            prefix = f.stem.partition("00.00")[0]
             assert prefix in DATA_NAMES.values()
 
             with gzip.open(f, "rb") as gzip_file_in:

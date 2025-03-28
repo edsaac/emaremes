@@ -179,3 +179,4 @@ markham_imgs/*
 timeseries
 usgs
 *.parquet
+lab/
