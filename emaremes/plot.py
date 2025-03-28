@@ -20,12 +20,12 @@ from .utils import (
     unzip_if_gz,
 )
 
-from .typing_utils import UnitedState, DataName
+from .typing_utils import UnitedState, MRMSDataType
 
 __all__ = ["precip_rate_map", "precip_flag_map"]
 
 
-def _make_fig(dar: xr.DataArray, extent: Extent, data_type: DataName) -> plt.Figure:
+def _make_fig(dar: xr.DataArray, extent: Extent, data_type: MRMSDataType) -> plt.Figure:
     """
     Helper function to make a figure.
 
@@ -35,7 +35,7 @@ def _make_fig(dar: xr.DataArray, extent: Extent, data_type: DataName) -> plt.Fig
         DataArray to plot.
     extent : Extent
         Extent of the map.
-    data_type : DataName
+    data_type : MRMSDataType
         Type of data to plot.
 
     Returns

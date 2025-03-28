@@ -3,21 +3,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from multiprocessing import Pool
 from itertools import compress
-from typing import Literal
 
 import requests
 import pandas as pd
 
 from .utils import DATA_NAMES
+from .typing_utils import MRMSDataType
 
 type DatetimeLike = datetime | pd.Timestamp
-type MRMSDataType = Literal[
-    "precip_rate",
-    "precip_flag",
-    "precip_accum_1h",
-    "precip_accum_24h",
-    "precip_accum_72h",
-]
 
 _BASE_URL = "https://mtarchive.geol.iastate.edu"
 LOCALPATH = Path.home() / "emaremes"
@@ -45,9 +38,7 @@ class GribFile:
                 self.t = self.t.replace(second=0, microsecond=0)
 
                 if self.t.minute % 2 != 0:
-                    raise ValueError(
-                        f"{self.t} is invalid. GRIB files are posted every 2 minutes"
-                    )
+                    raise ValueError(f"{self.t} is invalid. GRIB files are posted every 2 minutes")
 
             case "precip_accum_1h" | "precip_accum_24h" | "precip_accum_72h":
                 self.t = self.t.replace(minute=0, second=0, microsecond=0)
@@ -59,19 +50,32 @@ class GribFile:
         return f"{head}/{tail}_00.00_{self.t.strftime(r'%Y%m%d-%H%M%S')}.grib2.gz"
 
     @property
-    def fname(self) -> str:
-        return self.url.rpartition("/")[-1]
-
-    @property
     def folder(self) -> Path:
         return LOCALPATH / self.t.strftime(r"%Y%m%d")
 
     @property
+    def gz_path(self) -> Path:
+        return self.folder / self.filename
+
+    @property
+    def grib_path(self) -> Path:
+        return self.folder / self.gz_path.stem
+
+    @property
     def path(self) -> Path:
-        return self.folder / self.fname
+        """
+        Returns the uncompressed grib2 file if it exists, otherwise the compressed file.
+        """
+        if self.grib_path.exists():
+            return self.grib_path
+        return self.gz_path
 
     def exists(self) -> bool:
         return self.path.exists()
+
+    @property
+    def filename(self) -> str:
+        return self.url.rpartition("/")[-1]
 
 
 def single_file(gfile: GribFile, verbose: bool = False):
@@ -89,6 +93,11 @@ def single_file(gfile: GribFile, verbose: bool = False):
     -------
     None
     """
+    if gfile.exists():
+        if verbose:
+            print(f"{gfile.path} already exists. Skipping.")
+        return
+
     r = requests.get(gfile.url, stream=True)
 
     if r.status_code == 200:
@@ -99,10 +108,10 @@ def single_file(gfile: GribFile, verbose: bool = False):
         with open(gfile.path, "wb") as f:
             f.write(r.content)
             if verbose:
-                print(f"Saved {gfile.fname} :)")
+                print(f"Saved {gfile.path} :)")
     else:
         if verbose:
-            print(f"Error downloading {gfile.fname}. Likely it does not exist.")
+            print(f"Error downloading {gfile.filename}. Likely it does not exist.")
 
 
 def timerange(

@@ -1,6 +1,6 @@
 from typing import Literal
 
-type DataName = Literal[
+type MRMSDataType = Literal[
     "precip_rate",
     "precip_flag",
     "precip_accum_1h",

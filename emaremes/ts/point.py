@@ -10,9 +10,7 @@ from ..utils import Extent, unzip_if_gz
 
 
 @unzip_if_gz
-def query_single_file(
-    f: Path, geodata: gpd.GeoDataFrame
-) -> tuple[np.datetime64, dict[str, float]]:
+def query_single_file(f: Path, geodata: gpd.GeoDataFrame) -> tuple[np.datetime64, dict[str, float]]:
     """
     Extracts the nearest value of a grib2 file provided a latitude and longitude.
 
@@ -44,9 +42,7 @@ def query_single_file(
             lon, lat = point.geometry.x, point.geometry.y
             lon = 360 + lon if lon < 0 else lon
 
-            v = xclip.sel(latitude=lat, longitude=lon, method="nearest")[
-                "unknown"
-            ].values.copy()
+            v = xclip.sel(latitude=lat, longitude=lon, method="nearest")["unknown"].values.copy()
             data[str(index)] = float(v)
 
     return time, data
@@ -75,9 +71,7 @@ def query_files(files: list[Path], geodata: gpd.GeoDataFrame) -> pd.DataFrame:
     with Pool() as pool:
         query = pool.starmap(query_single_file, [(f, geodata) for f in files])
 
-    df = pd.DataFrame(
-        [{"timestamp": timestamp, **values} for timestamp, values in query]
-    )
+    df = pd.DataFrame([{"timestamp": timestamp, **values} for timestamp, values in query])
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
     df.set_index("timestamp", inplace=True)
 

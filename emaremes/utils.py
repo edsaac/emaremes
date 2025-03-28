@@ -66,15 +66,22 @@ class Extent:
         dict[str, slice]
             Dictionary of slices to pass to xarray.
         """
-        if self.left_lon < 0:
-            pos_left_lon = 360 + self.left_lon
 
-        if self.right_lon < 0:
-            pos_right_lon = 360 + self.right_lon
+        # Longitudes are positive in GRIB files, but they are negative
+        # in the geographical coordinate system (EPSG:4326).
+        pos_left_lon = 360 + self.left_lon if self.left_lon < 0 else self.left_lon
+        pos_right_lon = 360 + self.right_lon if self.right_lon < 0 else self.right_lon
+
+        # Add a little buffer
+        buffer = 0.01
+        buf_right_lon = round(pos_right_lon, 2) + buffer
+        buf_left_lon = round(pos_left_lon, 2) - buffer
+        buf_top_lat = round(self.up_lat, 2) + buffer
+        buf_down_lat = round(self.down_lat, 2) - buffer
 
         return dict(
-            latitude=slice(self.up_lat, self.down_lat),
-            longitude=slice(pos_left_lon, pos_right_lon),
+            latitude=slice(buf_top_lat, buf_down_lat),
+            longitude=slice(buf_left_lon, buf_right_lon),
         )
 
     def as_mpl(self):
@@ -216,9 +223,7 @@ def unzip_if_gz(func: Callable) -> Callable:
             assert prefix in DATA_NAMES.values()
 
             with gzip.open(f, "rb") as gzip_file_in:
-                with NamedTemporaryFile(
-                    "ab+", prefix=f"{prefix}_", suffix=".grib2"
-                ) as tf:
+                with NamedTemporaryFile("ab+", prefix=f"{prefix}_", suffix=".grib2") as tf:
                     unzipped_bytes = gzip_file_in.read()
                     tf.write(unzipped_bytes)
                     return func(Path(tf.name), *args[1:], **kwargs)
