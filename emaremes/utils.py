@@ -6,6 +6,15 @@ from pathlib import Path
 from typing import Callable
 from tempfile import NamedTemporaryFile
 
+__all__ = [
+    "Extent",
+    "DATA_NAMES",
+    "PRECIP_FLAGS",
+    "PRECIP_FLAGS_COLORS",
+    "STATE_BOUNDS",
+    "unzip_if_gz",
+]
+
 
 @dataclass
 class Extent:
@@ -231,3 +240,68 @@ def unzip_if_gz(func: Callable) -> Callable:
         raise ValueError("File is not `.gz` nor `.grib2`")
 
     return wrapper
+
+
+class _PathConfig:
+    def __init__(self) -> None:
+        self._localpath: Path = Path.home() / "emaremes"
+        self._allpaths: list[Path] = [self._localpath]
+        self._prefered: int = 0
+
+        if not self._localpath.exists():
+            self._localpath.mkdir()
+            print(f"Created `{self._localpath}` to store MRMS data.")
+
+    def add_path(self, path: Path) -> None:
+        """Append a location to store Gribfiles"""
+        path = Path(path)
+
+        if path in self._allpaths:
+            print(f"`{path}` is already in {self._allpaths}.")
+            return
+
+        if not path.exists():
+            print(f"`{path}` does not exist. Creating...")
+            path.mkdir(parents=True)
+
+        self._allpaths.append(path)
+        print(f"`{path}` was added to the list of paths with MRMS data.")
+
+    def set_prefered(self, index: int) -> None:
+        """Set the prefered path to store Gribfiles
+
+        Parameters
+        ----------
+        index : int
+            Index of the path to set as prefered.
+
+        Raises
+        ------
+        ValueError
+            If the index is out of range.
+        """
+        if index < 0 or index >= len(self.all_paths):
+            raise ValueError(
+                f"Index {index} is out of range. Only the following indexes are valid: \n"
+                + "\n".join([f"- {i}: {p}" for i, p in enumerate(self.all_paths)])
+            )
+
+        self._prefered = index
+
+    @property
+    def default_path(self) -> Path:
+        return self._localpath
+
+    @property
+    def all_paths(self) -> list[Path]:
+        return self._allpaths
+
+    @property
+    def prefered_path(self) -> Path:
+        return self.all_paths[self._prefered]
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __str__(self) -> str:
+        return f"defaultpath: {self.default_path}\nprefered: {self.prefered_path}"
