@@ -174,7 +174,7 @@ def timerange(
             print(f"-> {len(gfiles_missing)} files will be requested...")
 
         with Pool() as pool:
-            pool.map(single_file, gfiles_missing)
+            pool.starmap(single_file, [(f, verbose) for f in gfiles_missing])
 
     else:
         if verbose:
