@@ -287,6 +287,7 @@ class _PathConfig:
             )
 
         self._prefered = index
+        print("Prefered path to store Gribfiles is ", self.all_paths[self._prefered])
 
     @property
     def default_path(self) -> Path:

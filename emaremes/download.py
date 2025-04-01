@@ -58,7 +58,7 @@ class GribFile:
                 self._path = root / subdir / name
                 break
         else:
-            self.root = path_config.default_path
+            self.root = path_config.prefered_path
             self._path = root / subdir / gz_name
 
         self.subdir = self.root / subdir
