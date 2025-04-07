@@ -11,10 +11,10 @@ import emaremes as mrms
 
 @pytest.fixture
 def gzfiles(tmp_path):
-    mrms.download.path_config.set_prefered(tmp_path)
+    mrms.fetch.path_config.set_prefered(tmp_path)
 
     # Hourly data on a day during Hurricaine Helene
-    gzfiles = mrms.download.timerange(
+    gzfiles = mrms.fetch.timerange(
         "2024-09-26T12:00:00",
         "2024-09-28T00:00:00",
         frequency=Timedelta(minutes=60),

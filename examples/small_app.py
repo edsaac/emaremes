@@ -8,7 +8,7 @@ st.title("MRMS Data")
 st.write("This is a small app to test the `emaremes` package.")
 
 if "files" not in st.session_state:
-    files = mrms.download.timerange(
+    files = mrms.fetch.timerange(
         initial_datetime=Timestamp("2024-09-26"),
         end_datetime=Timestamp("2024-09-27"),
         frequency=Timedelta("1h"),

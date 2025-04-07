@@ -15,15 +15,15 @@ image_comparison_kwargs = dict(
 
 @pytest.fixture
 def precip_rate_file(tmp_path: Path) -> Path:
-    mrms.download.path_config.set_prefered(tmp_path)
-    files = mrms.download.timerange("20240927-120000", "20240927-120000", data_type="precip_rate")
+    mrms.fetch.path_config.set_prefered(tmp_path)
+    files = mrms.fetch.timerange("20240927-120000", "20240927-120000", data_type="precip_rate")
     return files[0]
 
 
 @pytest.fixture
 def precip_flag_file(tmp_path: Path) -> Path:
-    mrms.download.path_config.set_prefered(tmp_path)
-    files = mrms.download.timerange("20240927-120000", "20240927-120000", data_type="precip_flag")
+    mrms.fetch.path_config.set_prefered(tmp_path)
+    files = mrms.fetch.timerange("20240927-120000", "20240927-120000", data_type="precip_flag")
     return files[0]
 
 

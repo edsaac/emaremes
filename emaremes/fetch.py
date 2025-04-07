@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from itertools import compress, product
 from multiprocessing import Pool
 from pathlib import Path
+from typing import get_args
 
 import requests
 import pandas as pd
@@ -15,12 +16,13 @@ type TimedeltaLike = str | timedelta | pd.Timedelta
 
 _BASE_URL: str = "https://mtarchive.geol.iastate.edu"
 
+__all__ = ["path_config", "timerange"]
 
 path_config = _PathConfig()
 
 
 @dataclass
-class GribFile:
+class _GribFile:
     """
     Helper class to generate a grib file URL and a path.
     """
@@ -29,9 +31,8 @@ class GribFile:
     data_type: MRMSDataType = "precip_rate"
 
     def __post_init__(self):
-        # Make sure t is a pd.Timestamp
         if not isinstance(self.t, pd.Timestamp):
-            self.t = pd.to_datetime(self.t)
+            self.t: pd.Timestamp = pd.to_datetime(self.t)
 
         # Check if the data_type is valid
         match self.data_type:
@@ -46,7 +47,7 @@ class GribFile:
 
         # Check if the file exists in anywhere in path_config.
         # If it does, set that as the GribFile path. Otherwise,
-        # set the path to the file in the last ADDPATHS folder.
+        # set the path to the file in the prefered folder.
 
         subdir: str = self.t.strftime(r"%Y%m%d")
         gz_name: str = self.url.rpartition("/")[-1]
@@ -70,9 +71,9 @@ class GribFile:
     @property
     def url(self) -> str:
         """Assemble the URL to the MRMS archive"""
-        tail = DATA_NAMES[self.data_type]
-        head = f"{_BASE_URL}/{self.t.strftime(r'%Y/%m/%d')}/mrms/ncep/{tail}"
-        return f"{head}/{tail}_00.00_{self.t.strftime(r'%Y%m%d-%H%M%S')}.grib2.gz"
+        mrms_datatype = DATA_NAMES[self.data_type]
+        header = f"{_BASE_URL}/{self.t.strftime(r'%Y/%m/%d')}/mrms/ncep/{mrms_datatype}"
+        return f"{header}/{mrms_datatype}_00.00_{self.t.strftime(r'%Y%m%d-%H%M%S')}.grib2.gz"
 
     @property
     def path(self) -> Path:
@@ -86,21 +87,21 @@ class GribFile:
         return self._path.exists()
 
 
-def single_file(gfile: GribFile, verbose: bool = False):
+def _single_file(gfile: _GribFile, verbose: bool = False):
     """
     Requests a GribFile from the base URL and stores it into the MRMS default path.
 
     Parameters
     ----------
     gfile : GribFile
-        File to be downloaded
+        File to be requested.
     verbose : bool, optional
         Whether to print the progress of the download, by default False.
-
-    Returns
-    -------
-    None
     """
+
+    if not isinstance(gfile, _GribFile):
+        raise ValueError("`gfile` must be a _GribFile instance")
+
     if gfile.exists():
         if verbose:
             print(f"{gfile._path} already exists. Skipping.")
@@ -167,12 +168,17 @@ def timerange(
     if frequency < pd.Timedelta(minutes=2):
         raise ValueError("`frequency` should not be less than 2 minutes")
 
+    if data_type not in get_args(MRMSDataType.__value__):
+        raise KeyError(f"`data_type` must be one of: {get_args(MRMSDataType.__value__)}")
+
     # Generate range of files
     initial_datetime = initial_datetime.replace(second=0, microsecond=0)
     end_datetime = end_datetime.replace(second=0, microsecond=0)
 
     range_dates = pd.date_range(initial_datetime, end_datetime, freq=frequency)
-    gfiles = [GribFile(t, data_type) for t in range_dates]
+    print(f"-> {len(range_dates)} files were requested...")
+
+    gfiles = [_GribFile(t, data_type) for t in range_dates]
 
     for dest_folder in set([gf.subdir for gf in gfiles]):
         dest_folder.mkdir(exist_ok=True)
@@ -187,10 +193,10 @@ def timerange(
 
     if gfiles_missing:
         if verbose:
-            print(f"-> {len(gfiles_missing)} files will be requested...")
+            print(f"-> {len(gfiles_missing)} *new* files will be downloaded...")
 
         with Pool() as pool:
-            pool.starmap(single_file, [(f, verbose) for f in gfiles_missing])
+            pool.starmap(_single_file, [(f, verbose) for f in gfiles_missing])
 
     else:
         if verbose:
