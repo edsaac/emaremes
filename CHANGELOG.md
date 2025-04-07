@@ -3,6 +3,7 @@
 - Add example notebooks.
 - Add other data sources from MRMS: precipitation rate, precipitation flag, and 1h, 24h and 72h accumulated precipitation. 
 - Calculate mode when plotting coarsed precipitation flag data.
+- Rename `mrms.download` to `mrms.fecth`
 
 # ⭐ 0.0.3 | 2024-03-25
 - Organized timeseries building functions into the ts submodule.
