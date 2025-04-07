@@ -180,3 +180,12 @@ timeseries
 usgs
 *.parquet
 lab/
+
+## Tests
+.ruff_cache
+.pytest_cache
+tests/result_*
+tests/_requirements_last_test.txt
+
+## Paper
+paper

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from pathlib import Path
-from multiprocessing import Pool
+from datetime import date, datetime, timedelta
 from itertools import compress, product
+from multiprocessing import Pool
+from pathlib import Path
 
 import requests
 import pandas as pd
@@ -10,8 +10,8 @@ import pandas as pd
 from .utils import DATA_NAMES, _PathConfig
 from .typing_utils import MRMSDataType
 
-type DatetimeLike = datetime | pd.Timestamp
-
+type DatetimeLike = str | date | datetime | pd.Timestamp
+type TimedeltaLike = str | timedelta | pd.Timedelta
 
 _BASE_URL: str = "https://mtarchive.geol.iastate.edu"
 
@@ -52,7 +52,11 @@ class GribFile:
         gz_name: str = self.url.rpartition("/")[-1]
         grib_name: str = gz_name.rpartition(".")[0]
 
-        for root, name in product(reversed(path_config.all_paths), (grib_name, gz_name)):
+        ordered_paths = [path_config.prefered_path]
+        if other_paths := path_config.all_paths - {path_config.prefered_path}:
+            ordered_paths += list(other_paths)
+
+        for root, name in product(ordered_paths, (grib_name, gz_name)):
             if (root / subdir / name).exists():
                 self.root = root
                 self._path = root / subdir / name
@@ -84,7 +88,7 @@ class GribFile:
 
 def single_file(gfile: GribFile, verbose: bool = False):
     """
-    Requests a GribFile from the base URL to the MRMS archive.
+    Requests a GribFile from the base URL and stores it into the MRMS default path.
 
     Parameters
     ----------
@@ -121,7 +125,7 @@ def single_file(gfile: GribFile, verbose: bool = False):
 def timerange(
     initial_datetime: DatetimeLike,
     end_datetime: DatetimeLike,
-    frequency: timedelta = timedelta(minutes=10),
+    frequency: TimedeltaLike = pd.Timedelta(minutes=10),
     data_type: MRMSDataType = "precip_rate",
     verbose: bool = False,
 ):
@@ -134,10 +138,10 @@ def timerange(
         Initial datetime.
     end_datetime : DatetimeLike
         File to be downloaded.
-    frequency : timedelta = timedelta(minutes=10)
+    frequency : TimedeltaLike = pd.Timedelta(minutes=10)
         Frequency of files to download. Precipitation rate and flags are available every
         2 minutes. 24h accumulated precipitation is available every hour.
-    data_type : DataType, optional
+    data_type : MRMSDataType, optional
         Type of data to download, by default "precip_rate". Other options are
         "precip_flag" and "precip_accum_24h".
     verbose : bool, optional
@@ -148,7 +152,19 @@ def timerange(
     list[Path]
         List of paths with the downloaded files.
     """
-    if frequency < timedelta(minutes=2):
+    if not isinstance(initial_datetime, pd.Timestamp):
+        initial_datetime = pd.Timestamp(initial_datetime)
+
+    if not isinstance(end_datetime, pd.Timestamp):
+        end_datetime = pd.Timestamp(end_datetime)
+
+    if initial_datetime > end_datetime:
+        raise ValueError("`initial_datetime` must come before `end_datetime`")
+
+    if not isinstance(frequency, pd.Timedelta):
+        frequency = pd.Timedelta(frequency)
+
+    if frequency < pd.Timedelta(minutes=2):
         raise ValueError("`frequency` should not be less than 2 minutes")
 
     # Generate range of files

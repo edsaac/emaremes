@@ -244,62 +244,65 @@ def unzip_if_gz(func: Callable) -> Callable:
 
 class _PathConfig:
     def __init__(self) -> None:
-        self._localpath: Path = Path.home() / "emaremes"
-        self._allpaths: list[Path] = [self._localpath]
-        self._prefered: int = 0
+        self._defaultpath: Path = Path.home() / "emaremes"
+        self._allpaths: set[Path] = {self._defaultpath}
+        self._preferedpath: Path = self._defaultpath
 
-        if not self._localpath.exists():
-            self._localpath.mkdir()
-            print(f"Created `{self._localpath}` to store MRMS data.")
+        if not self._defaultpath.exists():
+            self._defaultpath.mkdir()
+            print(f"Created `{self._defaultpath}` to store MRMS data.")
 
-    def add_path(self, path: Path) -> None:
-        """Append a location to store Gribfiles"""
-        path = Path(path)
-
-        if path in self._allpaths:
-            print(f"`{path}` is already in {self._allpaths}.")
-            return
-
-        if not path.exists():
-            print(f"`{path}` does not exist. Creating...")
-            path.mkdir(parents=True)
-
-        self._allpaths.append(path)
-        print(f"`{path}` was added to the list of paths with MRMS data.")
-
-    def set_prefered(self, index: int) -> None:
-        """Set the prefered path to store Gribfiles
+    def add_path(self, path: Path | str, *, make_prefered: bool = False) -> None:
+        """Append a location to store Gribfiles.
 
         Parameters
         ----------
-        index : int
-            Index of the path to set as prefered.
-
-        Raises
-        ------
-        ValueError
-            If the index is out of range.
+        path : Path | str
+            Path to set as prefered.
         """
-        if index < 0 or index >= len(self.all_paths):
-            raise ValueError(
-                f"Index {index} is out of range. Only the following indexes are valid: \n"
-                + "\n".join([f"- {i}: {p}" for i, p in enumerate(self.all_paths)])
-            )
 
-        self._prefered = index
-        print("Prefered path to store Gribfiles is ", self.all_paths[self._prefered])
+        path = Path(path)
+
+        if path.exists():
+            if not path.is_dir():
+                raise ValueError(f"{path} exists but is not a directory.")
+
+        else:
+            path.mkdir(exist_ok=True, parents=True)
+
+        self._allpaths.add(Path(path))
+
+        if make_prefered:
+            self.set_prefered(path)
+
+    def set_prefered(self, path: Path | str) -> None:
+        """Set the prefered path to store Gribfiles.
+
+        Parameters
+        ----------
+        path : Path | str
+            Path to set as prefered.
+        """
+
+        path = Path(path)
+
+        if path not in self.all_paths:
+            self.add_path(path, make_prefered=False)
+
+        self._preferedpath = path
+        print("Prefered path to store *new* Gribfiles is ", self.prefered_path)
 
     @property
     def default_path(self) -> Path:
-        return self._localpath
+        return self._defaultpath
 
     @property
-    def all_paths(self) -> list[Path]:
+    def all_paths(self) -> set[Path]:
         return self._allpaths
 
     @property
     def prefered_path(self) -> Path:
-        return self.all_paths[self._prefered]
+        return self._preferedpath
 
     def __repr__(self) -> str:
         return str(self)
