@@ -12,4 +12,8 @@ _____________
 pip install emaremes
 ```
 
+**Documentation**
+
+[https://edsaac.github.io/emaremes/](https://edsaac.github.io/emaremes/)
+
 
