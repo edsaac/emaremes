@@ -1,3 +1,6 @@
+# 0.0.5 |
+- Add documentation using sphinx. 
+
 # ⭐ 0.0.4 | 2024-04-10
 - Rename `mrms.download` to `mrms.fetch`
 - Consolidate unzip decorator to handle both `.grib2.gz` and `.grib2` files.
