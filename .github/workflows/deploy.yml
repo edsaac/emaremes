@@ -1,0 +1,28 @@
+name: Deploy static site
+
+on:
+  push:
+    branches: [main]  # or your default branch
+
+permissions:
+  contents: write  # needed for pushing to gh-pages
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload HTML from custom folder
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ./docs/built/html  # change this to your folder name
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
