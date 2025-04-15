@@ -1,5 +1,6 @@
 # 0.0.5 |
-- Add documentation using sphinx. 
+- Add API documentation using sphinx.
+- Add notebook examples to HTMLs documentation.
 
 # ⭐ 0.0.4 | 2024-04-10
 - Rename `mrms.download` to `mrms.fetch`

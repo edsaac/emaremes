@@ -20,3 +20,16 @@ Required dependencies
 - cfgrib
 - cmocean
 - scipy
+
+Optional dependencies
+----------------------
+
+*For testing:*
+
+- pytest
+
+*For documentation:*
+
+- sphinx
+- furo
+- nbsphinx
