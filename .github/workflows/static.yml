@@ -36,7 +36,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install -U pip
-          python -m pip install -U -r requirements.txt"
+          python -m pip install -U -r "requirements.txt"
           python -m pip install -U sphinx furo
       - name: Install current repo
         run: |
