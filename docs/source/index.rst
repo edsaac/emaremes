@@ -6,8 +6,12 @@
 `emaremes`
 ========================
 
+.. note::
+   This project is under active development.
+
+
 `emaremes` is a Python library that provides tools for accessing and handling meteorological data from the 
-the `MRMS (Multi-Radar/Multi-Sensor) system <https://www.nssl.noaa.gov/projects/mrms/>`_`. It facilitates the downloading and processing of high-resolution 
+the `MRMS (Multi-Radar/Multi-Sensor) system <https://www.nssl.noaa.gov/projects/mrms/>`_. It facilitates the downloading and processing of high-resolution 
 weather radar data, particularly useful for analyzing precipitation intensity and accumulation.
 
 
@@ -21,12 +25,14 @@ weather radar data, particularly useful for analyzing precipitation intensity an
 - ... building time series from points or polygons
 - ... plotting maps 
 
-.. note::
-   This project is under active development.
 
+.. seealso::
+   `Iowa State Mesonet Website <https://mesonet.agron.iastate.edu/archive/>`_
+      This page contains the archive of MRMS resources that :py:mod:`emaremes` fetches.
 
-Contents
---------
+   `NOAA - MRMS Quantitative Precipitation Estimates <https://inside.nssl.noaa.gov/mrms/>`_
+      The official website of the MRMS-QPE system.
+
 
 .. toctree::
    :maxdepth: 2
@@ -35,4 +41,3 @@ Contents
    install
    how-to
    api
-
