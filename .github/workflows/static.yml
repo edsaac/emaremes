@@ -42,6 +42,7 @@ jobs:
         run: |
           python -m pip install -U pip
           python -m pip install -U -r "requirements.txt"
+          python -m pip install -U IPython ipykernel
           python -m pip install -U sphinx furo nbsphinx
       - name: Install current repo
         run: |
