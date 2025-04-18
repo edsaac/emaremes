@@ -176,7 +176,9 @@ def timerange(
     end_datetime = end_datetime.replace(second=0, microsecond=0)
 
     range_dates = pd.date_range(initial_datetime, end_datetime, freq=frequency)
-    print(f"-> {len(range_dates)} files were requested...")
+
+    if verbose:
+        print(f"-> {len(range_dates)} files requested...")
 
     gfiles = [_GribFile(t, data_type) for t in range_dates]
 

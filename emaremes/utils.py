@@ -219,7 +219,7 @@ def remove_idx_files(f: Path):
         idx_file.unlink()
 
 
-def unzip_if_gz(func: Callable) -> Callable:
+def unzip_if_gz[T, **P](func: Callable[P, T]) -> Callable[P, T]:
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         f = Path(args[0])

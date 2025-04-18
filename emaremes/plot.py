@@ -89,9 +89,7 @@ def _make_fig(dar: xr.DataArray, extent: Extent, data_type: MRMSDataType) -> plt
             cb = plt.colorbar(img, ax=ax, label=None, shrink=0.35)
             cb.ax.yaxis.set_ticks_position("none")
             cb.ax.yaxis.set_ticks(flags_ticks or cb.ax.yaxis.get_major_ticks())
-            cb.ax.set_yticklabels(
-                list(PRECIP_FLAGS.values()), fontdict={"fontsize": 8, "weight": 300}
-            )
+            cb.ax.set_yticklabels(list(PRECIP_FLAGS.values()), fontdict={"fontsize": 8, "weight": 300})
 
         case "_":
             raise ValueError(f"Data type {data_type} not implemented.")
@@ -105,9 +103,7 @@ def _make_fig(dar: xr.DataArray, extent: Extent, data_type: MRMSDataType) -> plt
     return fig
 
 
-def _get_extent_config(
-    extent: UnitedState | Literal["CONUS"] | Extent, scale_win: int | None
-) -> tuple[Extent, int]:
+def _get_extent_config(extent: UnitedState | Literal["CONUS"] | Extent, scale_win: int | None) -> tuple[Extent, int]:
     if isinstance(extent, Extent):
         return extent, scale_win or 1
 
@@ -121,9 +117,7 @@ def _get_extent_config(
         scale_win = scale_win or 5
         return extent, scale_win
 
-    raise ValueError(
-        f"{extent:=} not found. Valid options are `CONUS` or two-letter state codes (uppercase)."
-    )
+    raise ValueError(f"{extent:=} not found. Valid options are `CONUS` or two-letter state codes (uppercase).")
 
 
 @unzip_if_gz
@@ -167,6 +161,7 @@ def precip_rate_map(
         # Make figure
         fig = _make_fig(coarse["unknown"], extent=extent, data_type="precip_rate")
 
+    plt.close()
     return fig
 
 
@@ -212,4 +207,5 @@ def precip_flag_map(
 
         fig = _make_fig(coarse["unknown"], extent=extent, data_type="precip_flag")
 
+    plt.close()
     return fig
