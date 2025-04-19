@@ -2,9 +2,9 @@ import gzip
 import functools
 
 from dataclasses import dataclass
+from tempfile import NamedTemporaryFile
 from pathlib import Path
 from typing import Callable
-from tempfile import NamedTemporaryFile
 
 __all__ = [
     "Extent",
@@ -200,7 +200,7 @@ STATE_BOUNDS: dict[str, Extent] = {
 }
 
 
-def remove_idx_files(f: Path):
+def remove_idx_files(f: Path) -> None:
     """
     Removes the index files of a grib2 file.
 
@@ -219,9 +219,9 @@ def remove_idx_files(f: Path):
         idx_file.unlink()
 
 
-def unzip_if_gz[T, **P](func: Callable[P, T]) -> Callable[P, T]:
+def unzip_if_gz[**P, R](func: Callable[P, R]) -> Callable[P, R]:
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapped(*args: P.args, **kwargs: P.kwargs):
         f = Path(args[0])
 
         if f.suffix == ".grib2":
@@ -239,7 +239,7 @@ def unzip_if_gz[T, **P](func: Callable[P, T]) -> Callable[P, T]:
 
         raise ValueError("File is not `.gz` nor `.grib2`")
 
-    return wrapper
+    return wrapped
 
 
 class _PathConfig:

@@ -30,7 +30,7 @@ class _GribFile:
     t: DatetimeLike
     data_type: MRMSDataType = "precip_rate"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.t, pd.Timestamp):
             self.t: pd.Timestamp = pd.to_datetime(self.t)
 
@@ -87,7 +87,7 @@ class _GribFile:
         return self._path.exists()
 
 
-def _single_file(gfile: _GribFile, verbose: bool = False):
+def _single_file(gfile: _GribFile, verbose: bool = False) -> None:
     """
     Requests a GribFile from the base URL and stores it into the MRMS default path.
 
@@ -129,7 +129,7 @@ def timerange(
     frequency: TimedeltaLike = pd.Timedelta(minutes=10),
     data_type: MRMSDataType = "precip_rate",
     verbose: bool = False,
-):
+) -> list[Path]:
     """
     Download MRMS files available in the time range.
 

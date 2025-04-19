@@ -1,3 +1,7 @@
+# 0.0.6 | 
+- Close figures in `mrms.plot` to avoid duplicates in notebooks
+
+
 # ⭐ 0.0.5 | 2025-04-15
 - Add API documentation using sphinx.
 - Add notebook examples to HTMLs documentation.
