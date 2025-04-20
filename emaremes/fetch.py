@@ -11,8 +11,8 @@ import pandas as pd
 from .utils import DATA_NAMES, _PathConfig
 from .typing_utils import MRMSDataType
 
-type DatetimeLike = str | date | datetime | pd.Timestamp
-type TimedeltaLike = str | timedelta | pd.Timedelta
+type DatetimeLike = date | datetime | pd.Timestamp
+type TimedeltaLike = timedelta | pd.Timedelta
 
 _BASE_URL: str = "https://mtarchive.geol.iastate.edu"
 
@@ -124,9 +124,9 @@ def _single_file(gfile: _GribFile, verbose: bool = False) -> None:
 
 
 def timerange(
-    initial_datetime: DatetimeLike,
-    end_datetime: DatetimeLike,
-    frequency: TimedeltaLike = pd.Timedelta(minutes=10),
+    initial_datetime: str | DatetimeLike,
+    end_datetime: str | DatetimeLike,
+    frequency: str | TimedeltaLike = pd.Timedelta(minutes=10),
     data_type: MRMSDataType = "precip_rate",
     verbose: bool = False,
 ) -> list[Path]:

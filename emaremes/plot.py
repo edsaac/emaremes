@@ -1,4 +1,5 @@
 from typing import Literal
+from os import PathLike
 from pathlib import Path
 
 import numpy as np
@@ -122,9 +123,10 @@ def _get_extent_config(extent: UnitedState | Literal["CONUS"] | Extent, scale_wi
 
 @unzip_if_gz
 def precip_rate_map(
-    file: Path,
+    file: PathLike,
     state: UnitedState | Literal["CONUS"] | Extent,
     scale_win: int | None = None,
+    _plt_close: bool = True,
 ) -> plt.Figure:
     """
     Make a map of precipitation rate.
@@ -137,11 +139,17 @@ def precip_rate_map(
         State to plot. If "CONUS", the entire CONUS is plotted.
     scale_win : int | None = None
         Window size for downscaling. If `None`, it defaults to 5 for states and 10 for CONUS.
+    _plt_close: bool = True
+        Close plot to avoid duplicates in Notebooks. Set to `false` when testing because
+        matplotlib.testing.image_comparison expects an open plot.
+
     Returns
     -------
     plt.Figure
         Figure object. It uses the `cartopy` library to plot the map.
     """
+    file = Path(file)
+
     if DATA_NAMES["precip_rate"] not in file.name:
         raise ValueError(f"File {file} does not contain **precipitation rate** data.")
 
@@ -161,15 +169,17 @@ def precip_rate_map(
         # Make figure
         fig = _make_fig(coarse["unknown"], extent=extent, data_type="precip_rate")
 
-    plt.close()
+    if _plt_close:
+        plt.close()
     return fig
 
 
 @unzip_if_gz
 def precip_flag_map(
-    file: Path,
+    file: PathLike,
     state: UnitedState | Literal["CONUS"] | Extent,
     scale_win: int | None = None,
+    _plt_close: bool = True,
 ) -> plt.Figure:
     """
     Make a map of precipitation types.
@@ -182,12 +192,17 @@ def precip_flag_map(
         State to plot. If "CONUS", the entire CONUS is plotted.
     scale_win : int | None = None
         Window size for downscaling. If `None`, it defaults to 5 for states and 10 for CONUS.
+    _plt_close: bool = True
+        Close plot to avoid duplicates in Notebooks. Set to `false` when testing because
+        matplotlib.testing.image_comparison expects an open plot.
 
     Returns
     -------
     plt.Figure
         Figure object. It uses the `cartopy` library to plot the map.
     """
+    file = Path(file)
+
     if DATA_NAMES["precip_flag"] not in file.name:
         raise ValueError(f"File {file} does not contain **precipitation flag** data.")
 
@@ -207,5 +222,6 @@ def precip_flag_map(
 
         fig = _make_fig(coarse["unknown"], extent=extent, data_type="precip_flag")
 
-    plt.close()
+    if _plt_close:
+        plt.close()
     return fig

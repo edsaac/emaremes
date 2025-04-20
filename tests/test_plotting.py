@@ -32,23 +32,23 @@ def precip_flag_file(tmp_path: Path) -> Path:
 
 @image_comparison(baseline_images=["NC_precip_rate"], **image_comparison_kwargs)
 def test_nc_preciprate(precip_rate_file: Path) -> plt.Figure:
-    fig = mrms.plot.precip_rate_map(precip_rate_file, state="NC")
+    fig = mrms.plot.precip_rate_map(precip_rate_file, state="NC", _plt_close=False)
     return fig
 
 
 @image_comparison(baseline_images=["CONUS_precip_rate"], **image_comparison_kwargs)
 def test_conus_preciprate(precip_rate_file: Path) -> plt.Figure:
-    fig = mrms.plot.precip_rate_map(precip_rate_file, state="CONUS")
+    fig = mrms.plot.precip_rate_map(precip_rate_file, state="CONUS", _plt_close=False)
     return fig
 
 
 @image_comparison(baseline_images=["NC_precip_flag"], **image_comparison_kwargs)
 def test_nc_precipflag(precip_flag_file: Path) -> plt.Figure:
-    fig = mrms.plot.precip_flag_map(precip_flag_file, state="NC")
+    fig = mrms.plot.precip_flag_map(precip_flag_file, state="NC", _plt_close=False)
     return fig
 
 
 @image_comparison(baseline_images=["CONUS_precip_flag"], **image_comparison_kwargs)
 def test_conus_precipflag(precip_flag_file: Path) -> plt.Figure:
-    fig = mrms.plot.precip_flag_map(precip_flag_file, state="CONUS")
+    fig = mrms.plot.precip_flag_map(precip_flag_file, state="CONUS", _plt_close=False)
     return fig
