@@ -33,3 +33,4 @@ Optional dependencies
 - sphinx
 - furo
 - nbsphinx
+- ipython

@@ -63,8 +63,9 @@ def query_files(files: list[Path], geodata: gpd.GeoDataFrame) -> pd.DataFrame:
 
     Returns
     -------
-    pd.DataFrame
-        A pandas DataFrame with the timestamps and values of the points in geodata.
+    pd.Dataframe
+        Pandas dataframe with the extracted values. Rows are indexed by timestamp, columns are
+        identified by the indexes in the `geodata` GeoDataFrame.
     """
     if not files:
         raise ValueError("No files to query")

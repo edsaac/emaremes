@@ -15,9 +15,12 @@ the `MRMS (Multi-Radar/Multi-Sensor) system <https://www.nssl.noaa.gov/projects/
 weather radar data, particularly useful for analyzing precipitation intensity and accumulation.
 
 
-.. image:: _static/test_plotting/CONUS_precip_flag.png
-  :width: 100%
-  :alt: Alternative text
+.. figure:: _static/test_plotting/CONUS_precip_flag.png
+   :width: 100%
+   :alt: CONUS Map for Precipitation type on Sep 27th, 2024
+
+   CONUS Map of precipitation type on Sep 27th, 2024 (Hurricane Helene)
+
 
 `emaremes` is divided in three modules that cover functions for...
 

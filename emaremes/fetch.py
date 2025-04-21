@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from itertools import compress, product
 from multiprocessing import Pool
 from pathlib import Path
+from os.path import getsize
 from typing import get_args
 
 import requests
@@ -81,10 +82,15 @@ class _GribFile:
 
     @property
     def filename(self) -> str:
-        return self._path.name
+        return self.path.name
 
     def exists(self) -> bool:
-        return self._path.exists()
+        if it_exists := self.path.exists():
+            # Check if the file is empty.
+            if getsize(self.path) == 0:
+                return False
+
+        return it_exists
 
 
 def _single_file(gfile: _GribFile, verbose: bool = False) -> None:
@@ -135,17 +141,17 @@ def timerange(
 
     Parameters
     ----------
-    initial_datetime : DatetimeLike
+    initial_datetime : str | DatetimeLike
         Initial datetime.
-    end_datetime : DatetimeLike
-        File to be downloaded.
-    frequency : TimedeltaLike = pd.Timedelta(minutes=10)
+    end_datetime : str | DatetimeLike
+        End datetime.
+    frequency : str | TimedeltaLike = pd.Timedelta(minutes=10)
         Frequency of files to download. Precipitation rate and flags are available every
-        2 minutes. 24h accumulated precipitation is available every hour.
-    data_type : MRMSDataType, optional
-        Type of data to download, by default "precip_rate". Other options are
-        "precip_flag" and "precip_accum_24h".
-    verbose : bool, optional
+        2 minutes. Accumulated precipitation is available every hour.
+    data_type : MRMSDataType = "precip_rate"
+        Type of data to download, by default "precip_rate". Other options are "precip_flag",
+        "precip_accum_1h", "precip_accum_24h" and "precip_accum_72h",
+    verbose : bool = False
         Whether to print the progress of the download, by default False.
 
     Returns
@@ -174,7 +180,6 @@ def timerange(
     # Generate range of files
     initial_datetime = initial_datetime.replace(second=0, microsecond=0)
     end_datetime = end_datetime.replace(second=0, microsecond=0)
-
     range_dates = pd.date_range(initial_datetime, end_datetime, freq=frequency)
 
     if verbose:
@@ -182,7 +187,7 @@ def timerange(
 
     gfiles = [_GribFile(t, data_type) for t in range_dates]
 
-    for dest_folder in set([gf.subdir for gf in gfiles]):
+    for dest_folder in set([gf.subdir for gf in gfiles]):  # TODO: Calculating this set is suboptimal
         dest_folder.mkdir(exist_ok=True)
 
         dest_folder.glob("*.idx")

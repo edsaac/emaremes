@@ -166,6 +166,12 @@ def query_files(
         Geopandas dataframe of polygons to extract the value from.
     upsample : bool = False
         Whether to upsample the data to a finer grid, by default False.
+
+    Returns
+    -------
+    pd.Dataframe
+        Pandas dataframe with the extracted values. Rows are indexed by timestamp, columns are
+        identified by the indexes in the `geodata` GeoDataFrame.
     """
 
     # Figure out the extent of first clip
