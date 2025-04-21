@@ -1,3 +1,4 @@
+from os import PathLike
 from pathlib import Path
 from multiprocessing import Pool
 
@@ -15,7 +16,7 @@ from ..utils import Extent, unzip_if_gz
 
 @unzip_if_gz
 def _extract_using_masks_from_file(
-    file: Path,
+    file: PathLike,
     masks: dict[str, np.ndarray],
     extent: Extent,
     variable: str = "unknown",
@@ -26,7 +27,7 @@ def _extract_using_masks_from_file(
 
     Parameters
     ----------
-    file : Path
+    file : PathLike
         Path to the grib2 file.
     masks : dict[str, np.ndarray]
         Masks to apply to the grib2 file.
@@ -70,7 +71,7 @@ def _extract_using_masks_from_file(
 
 @unzip_if_gz
 def _calculate_masks_and_coords(
-    f: Path,
+    f: PathLike,
     polygons: dict[str, Polygon],
     extent: Extent,
     upsample: bool = True,
@@ -111,7 +112,7 @@ def query_single_file(
 
     Parameters
     ----------
-    file : Path
+    file : PathLike
         Path to grib2 file to extract the polygon values from.
     geodata : gpd.GeoDataFrame
         Geopandas dataframe of polygons to extract the value from.
@@ -140,14 +141,10 @@ def query_single_file(
 
     # Reproject the geodatabase and create a mapping of identifier: polygon
     geodata_reproj = geodata.to_crs("4326")
-    translated_polygons = {
-        k: translate(geo.geometry, xoff=360) for k, geo in geodata_reproj.iterrows()
-    }
+    translated_polygons = {k: translate(geo.geometry, xoff=360) for k, geo in geodata_reproj.iterrows()}
 
     # Generate masks
-    masks, upsample_coords = _calculate_masks_and_coords(
-        file, translated_polygons, extent, upsample
-    )
+    masks, upsample_coords = _calculate_masks_and_coords(file, translated_polygons, extent, upsample)
 
     return _extract_using_masks_from_file(file, masks, extent, "unknown", upsample_coords)
 
@@ -169,6 +166,12 @@ def query_files(
         Geopandas dataframe of polygons to extract the value from.
     upsample : bool = False
         Whether to upsample the data to a finer grid, by default False.
+
+    Returns
+    -------
+    pd.Dataframe
+        Pandas dataframe with the extracted values. Rows are indexed by timestamp, columns are
+        identified by the indexes in the `geodata` GeoDataFrame.
     """
 
     # Figure out the extent of first clip
@@ -187,14 +190,10 @@ def query_files(
 
     # Reproject the geodatabase and create a mapping of identifier: polygon
     geodata_reproj = geodata.to_crs("4326")
-    translated_polygons = {
-        k: translate(geo.geometry, xoff=360) for k, geo in geodata_reproj.iterrows()
-    }
+    translated_polygons = {k: translate(geo.geometry, xoff=360) for k, geo in geodata_reproj.iterrows()}
 
     # Generate masks using the first file
-    masks, upsample_coords = _calculate_masks_and_coords(
-        files[0], translated_polygons, extent, upsample
-    )
+    masks, upsample_coords = _calculate_masks_and_coords(files[0], translated_polygons, extent, upsample)
 
     # Query all GRIB files
     with Pool() as pool:

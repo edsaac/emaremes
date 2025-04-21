@@ -1,10 +1,11 @@
 import gzip
 import functools
+from os import PathLike
 
 from dataclasses import dataclass
 from tempfile import NamedTemporaryFile
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Concatenate
 
 __all__ = [
     "Extent",
@@ -219,23 +220,24 @@ def remove_idx_files(f: Path) -> None:
         idx_file.unlink()
 
 
-def unzip_if_gz[**P, R](func: Callable[P, R]) -> Callable[P, R]:
+def unzip_if_gz[**P, R](func: Callable[Concatenate[PathLike, P], R]) -> Callable[Concatenate[Path, P], R]:
     @functools.wraps(func)
-    def wrapped(*args: P.args, **kwargs: P.kwargs):
-        f = Path(args[0])
+    def wrapped(f: PathLike, *args: P.args, **kwargs: P.kwargs):
+        # Convert to Path object
+        f = Path(f)
 
         if f.suffix == ".grib2":
-            return func(*args, **kwargs)
+            return func(f, *args, **kwargs)
 
         elif f.suffix == ".gz":
             prefix = f.stem.partition("_00.00_")[0]
-            assert prefix in DATA_NAMES.values()
+            assert prefix in DATA_NAMES.values(), "Invalid prefix"
 
             with gzip.open(f, "rb") as gzip_file_in:
                 with NamedTemporaryFile("ab+", prefix=f"{prefix}_", suffix=".grib2") as tf:
                     unzipped_bytes = gzip_file_in.read()
                     tf.write(unzipped_bytes)
-                    return func(Path(tf.name), *args[1:], **kwargs)
+                    return func(Path(tf.name), *args, **kwargs)
 
         raise ValueError("File is not `.gz` nor `.grib2`")
 
@@ -252,12 +254,12 @@ class _PathConfig:
             self._defaultpath.mkdir()
             print(f"Created `{self._defaultpath}` to store MRMS data.")
 
-    def add_path(self, path: Path | str, *, make_prefered: bool = False) -> None:
+    def add_path(self, path: PathLike, *, make_prefered: bool = False) -> None:
         """Append a location to store Gribfiles.
 
         Parameters
         ----------
-        path : Path | str
+        path : PathLike
             Path to set as prefered.
         """
 
@@ -275,12 +277,12 @@ class _PathConfig:
         if make_prefered:
             self.set_prefered(path)
 
-    def set_prefered(self, path: Path | str) -> None:
+    def set_prefered(self, path: PathLike) -> None:
         """Set the prefered path to store Gribfiles.
 
         Parameters
         ----------
-        path : Path | str
+        path : PathLike
             Path to set as prefered.
         """
 

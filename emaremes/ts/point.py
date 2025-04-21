@@ -1,4 +1,5 @@
 from multiprocessing import Pool
+from os import PathLike
 from pathlib import Path
 
 import numpy as np
@@ -10,13 +11,13 @@ from ..utils import Extent, unzip_if_gz
 
 
 @unzip_if_gz
-def query_single_file(f: Path, geodata: gpd.GeoDataFrame) -> tuple[np.datetime64, dict[str, float]]:
+def query_single_file(f: PathLike, geodata: gpd.GeoDataFrame) -> tuple[np.datetime64, dict[str, float]]:
     """
     Extracts the nearest value of a grib2 file provided a latitude and longitude.
 
     Parameters
     ----------
-    f : Path
+    f : PathLike
         Path to the grib2 file.
     geodata: gpd.GeoDataFrame
         GeoDataFrame containing Points as geometries.
@@ -62,8 +63,9 @@ def query_files(files: list[Path], geodata: gpd.GeoDataFrame) -> pd.DataFrame:
 
     Returns
     -------
-    pd.DataFrame
-        A pandas DataFrame with the timestamps and values of the points in geodata.
+    pd.Dataframe
+        Pandas dataframe with the extracted values. Rows are indexed by timestamp, columns are
+        identified by the indexes in the `geodata` GeoDataFrame.
     """
     if not files:
         raise ValueError("No files to query")
