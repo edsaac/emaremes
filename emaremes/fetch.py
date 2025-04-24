@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from itertools import compress, product
 from multiprocessing import Pool
 from pathlib import Path
+from shutil import copyfileobj
 from os.path import getsize
 from typing import get_args
 
@@ -113,20 +114,17 @@ def _single_file(gfile: _GribFile, verbose: bool = False) -> None:
             print(f"{gfile._path} already exists. Skipping.")
         return
 
-    r = requests.get(gfile.url, stream=True)
+    # Make sure YYYYMMDD folder exists
+    gfile.subdir.mkdir(exist_ok=True, parents=True)
 
-    if r.status_code == 200:
-        # Make sure YYYYMMDD folder exists
-        gfile.subdir.mkdir(exist_ok=True, parents=True)
+    with requests.get(gfile.url, stream=True) as r, open(gfile._path, "wb") as f:
+        copyfileobj(r.raw, f)  # Write data to file
 
-        # Write data to file
-        with open(gfile._path, "wb") as f:
-            f.write(r.content)
-            if verbose:
-                print(f"Saved {gfile._path} :)")
-    else:
         if verbose:
-            print(f"Error downloading {gfile.filename}. Likely it does not exist.")
+            if r.status_code == 200:
+                print(f"Saved {gfile._path} :)")
+            else:
+                print(f"Error downloading {gfile.filename}. Likely it does not exist.")
 
 
 def timerange(
