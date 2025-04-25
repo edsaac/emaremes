@@ -1,6 +1,7 @@
 # 0.0.6 | 
 - Close figures in `mrms.plot` to avoid duplicates in notebooks
-
+- Refactor `mrms.fetch` to stream data to disk instead of keeping objects in memory
+- Typos in documentation
 
 # ⭐ 0.0.5 | 2025-04-15
 - Add API documentation using sphinx.
