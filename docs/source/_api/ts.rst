@@ -1,7 +1,7 @@
 emaremes.ts
 ==============
 
-Funtions to build time series using GeoDataFrame objects. 
+Functions to build time series using GeoDataFrame objects. 
 
 point
 -----
