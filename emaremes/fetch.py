@@ -207,4 +207,4 @@ def timerange(
         if verbose:
             print("Nothing new to download :D")
 
-    return [gf._path for gf in gfiles]
+    return [gf._path for gf in gfiles if gf.exists()]
