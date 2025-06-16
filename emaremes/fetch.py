@@ -117,14 +117,17 @@ def _single_file(gfile: _GribFile, verbose: bool = False) -> None:
     # Make sure YYYYMMDD folder exists
     gfile.subdir.mkdir(exist_ok=True, parents=True)
 
-    with requests.get(gfile.url, stream=True) as r, open(gfile._path, "wb") as f:
-        copyfileobj(r.raw, f)  # Write data to file
+    with requests.get(gfile.url, stream=True) as r:
+        if r.status_code == 200:
+            with open(gfile._path, "wb") as f:
+                copyfileobj(r.raw, f)  # Write data to file
 
-        if verbose:
-            if r.status_code == 200:
+            if verbose:
                 print(f"Saved {gfile._path} :)")
-            else:
-                print(f"Error downloading {gfile.filename}. Likely it does not exist.")
+
+        else:
+            if verbose:
+                print(f"Error downloading {gfile.filename}. It is likely that it does not exist in the archive.")
 
 
 def timerange(
