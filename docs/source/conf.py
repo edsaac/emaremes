@@ -9,7 +9,7 @@
 project = "emaremes"
 copyright = "2025, Edwin Saavedra C."
 author = "Edwin Saavedra C."
-release = "0.0.6"
+release = "0.0.7"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
