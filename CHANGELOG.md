@@ -1,15 +1,16 @@
-# 0.0.6 | 
+# ⭐ 0.0.7 | 2025-06-16
+- Check if file could be downloaded in list returned by `mrms.fetch`.
+___________
+
+## Previous notes:
+**0.0.6 | 2025-??-??**
 - Close figures in `mrms.plot` to avoid duplicates in notebooks
 - Refactor `mrms.fetch` to stream data to disk instead of keeping objects in memory
 - Typos in documentation
 
-# ⭐ 0.0.5 | 2025-04-15
+**0.0.5 | 2025-04-15**
 - Add API documentation using sphinx.
 - Add notebook examples to HTMLs documentation.
-
-___________
-
-## Previous notes:
 
 **0.0.4 | 2025-04-10**
 - Rename `mrms.download` to `mrms.fetch`
