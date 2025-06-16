@@ -1,8 +1,12 @@
-# ⭐ 0.0.7 | 2025-06-16
-- Check if file could be downloaded in list returned by `mrms.fetch`.
+# ⭐ 0.0.8 | 2025-06-16
+- Bug fix: If file does not exist in the archive, do not create one on disk.
+- Set 1KB as the minimum size of a file to be considered valid.
 ___________
 
 ## Previous notes:
+**0.0.7 | 2025-06-16**
+- Check if file could be downloaded in list returned by `mrms.fetch`.
+
 **0.0.6 | 2025-??-??**
 - Close figures in `mrms.plot` to avoid duplicates in notebooks
 - Refactor `mrms.fetch` to stream data to disk instead of keeping objects in memory

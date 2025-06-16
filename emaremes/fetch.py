@@ -88,7 +88,7 @@ class _GribFile:
     def exists(self) -> bool:
         if it_exists := self.path.exists():
             # Check if the file is empty.
-            if getsize(self.path) == 0:
+            if getsize(self.path) <= 1024:
                 return False
 
         return it_exists
